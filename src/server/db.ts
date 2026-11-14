@@ -89,36 +89,42 @@ export async function closeDb() {
   }
 }
 export async function migrate(db: Database) {
-  await db.exec(
-    "CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, checksum text, applied_at timestamptz NOT NULL DEFAULT now()); ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS checksum text",
-  );
-  const names = (await readdir(resolve("db/migrations")))
-    .filter((n) => /^\d{4}_[a-z0-9_-]+\.sql$/.test(n))
-    .sort();
-  for (const name of names) {
-    const sql = await readFile(resolve("db/migrations", name), "utf8");
-    const checksum = createHash("sha256").update(sql).digest("hex");
-    const applied = (
-      await db.query<{ checksum: string | null }>(
-        "SELECT checksum FROM schema_migrations WHERE name=$1",
-        [name],
-      )
-    )[0];
-    if (applied) {
-      if (applied.checksum && applied.checksum !== checksum)
-        throw new Error(
-          `이미 적용한 마이그레이션이 변경되었습니다: ${name}. 기존 파일을 되돌리고 새 마이그레이션을 추가하세요.`,
-        );
-      if (!applied.checksum)
-        await db.query("UPDATE schema_migrations SET checksum=$1 WHERE name=$2", [checksum, name]);
-      continue;
-    }
-    await db.transaction(async (tx) => {
+  await db.transaction(async (tx) => {
+    // Hold one PostgreSQL transaction/connection across the whole startup migration.
+    // PGlite already requires a single process and has no distributed lock requirement.
+    if (getConfig().databaseUrl) await tx.query("SELECT pg_advisory_xact_lock(57452001)");
+    await tx.exec(
+      "CREATE TABLE IF NOT EXISTS schema_migrations (name text PRIMARY KEY, checksum text, applied_at timestamptz NOT NULL DEFAULT now()); ALTER TABLE schema_migrations ADD COLUMN IF NOT EXISTS checksum text",
+    );
+    const names = (await readdir(resolve("db/migrations")))
+      .filter((n) => /^\d{4}_[a-z0-9_-]+\.sql$/.test(n))
+      .sort();
+    for (const name of names) {
+      const sql = await readFile(resolve("db/migrations", name), "utf8"),
+        checksum = createHash("sha256").update(sql).digest("hex");
+      const applied = (
+        await tx.query<{ checksum: string | null }>(
+          "SELECT checksum FROM schema_migrations WHERE name=$1",
+          [name],
+        )
+      )[0];
+      if (applied) {
+        if (applied.checksum && applied.checksum !== checksum)
+          throw new Error(
+            `이미 적용한 마이그레이션이 변경되었습니다: ${name}. 기존 파일을 되돌리고 새 마이그레이션을 추가하세요.`,
+          );
+        if (!applied.checksum)
+          await tx.query("UPDATE schema_migrations SET checksum=$1 WHERE name=$2", [
+            checksum,
+            name,
+          ]);
+        continue;
+      }
       await tx.exec(sql);
       await tx.query("INSERT INTO schema_migrations(name,checksum) VALUES($1,$2)", [
         name,
         checksum,
       ]);
-    });
-  }
+    }
+  });
 }

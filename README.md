@@ -12,6 +12,8 @@ Liner 공고 탐색·원문 변경 검수와 스티비 주소록/수신 거부 �
 
 발급 계정용 `/login` 화면에서 이메일·비밀번호로 로그인하고 대시보드로 이동할 수 있습니다. 회원가입은 제공하지 않습니다. [계정 발급·로그인 API·검증](docs/AUTHENTICATION.md)을 참고하세요.
 
+Render 무료 웹 서버·PostgreSQL 체험 배포의 구성과 실제 상태는 [DEPLOYMENT.md](docs/DEPLOYMENT.md)에 기록합니다. 운영 서버는 가상 규칙을 시드하지 않으며 외부 연동을 기본 비활성화합니다.
+
 ## 바로 실행
 
 필수 환경: Node.js 24, npm. Docker·API 키·외부 DB 없이 실행할 수 있습니다.

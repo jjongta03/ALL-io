@@ -3,7 +3,10 @@ import { resolve } from "node:path";
 export function getConfig() {
   const production = process.env.APP_ENV === "production";
   const demo = !production && (process.env.APP_MODE ?? "demo") === "demo";
-  const appUrl = process.env.APP_URL ?? "http://127.0.0.1:3000";
+  const appUrl =
+    process.env.APP_URL?.trim() ||
+    (process.env.RENDER === "true" ? process.env.RENDER_EXTERNAL_URL : undefined) ||
+    "http://127.0.0.1:3000";
   // Use a project-scoped name: an unrelated DATABASE_URL may already exist on the host.
   const databaseUrl = process.env.MAWD_DATABASE_URL || null;
   if (

@@ -4,6 +4,14 @@ import { AppError } from "./errors";
 const prefix = Buffer.from("MAWDENC1");
 function encryptionKey() {
   const value = process.env.CONTRACT_ENCRYPTION_KEY;
+  const encoded = process.env.CONTRACT_ENCRYPTION_KEY_BASE64;
+  if (value && encoded) throw new AppError(503, "계약서 암호화 키는 한 형식만 설정하세요.");
+  if (encoded) {
+    const decoded = Buffer.from(encoded, "base64");
+    if (decoded.length !== 32 || decoded.toString("base64") !== encoded)
+      throw new AppError(503, "계약서 암호화 키 설정을 확인하세요.");
+    return decoded;
+  }
   if (value && !/^[a-f0-9]{64}$/i.test(value))
     throw new AppError(503, "계약서 암호화 키 설정을 확인하세요.");
   if (!value && getConfig().production)
