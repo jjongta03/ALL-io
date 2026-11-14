@@ -13,6 +13,7 @@ import {
 import { dateSchema } from "@/domain/contracts";
 import { readContractUpload } from "@/integrations/contract-reader";
 import * as service from "./workspace";
+import { connectedApi, connectedJobs, runConnectedJob } from "./connected-workflows";
 import {
   dispatchWorkspaceNotifications,
   notificationInbox,
@@ -21,6 +22,8 @@ import {
 
 const uuid = (v: string) => z.uuid().parse(v);
 export async function workspaceApi(req: Request, db: Database, user: User, path: string[]) {
+  const extra = await connectedApi(req, db, user, path);
+  if (extra !== undefined) return extra;
   const key = `${req.method} ${path.join("/")}`;
   if (key === "GET profile") return service.getProfile(db, user.id);
   if (key === "PUT profile")
@@ -175,8 +178,10 @@ export async function workspaceApi(req: Request, db: Database, user: User, path:
     if (user.role !== "ADMIN") throw new AppError(403, "운영자 권한이 필요합니다.");
     const body = await readJson(
       req,
-      z.object({ kind: z.enum(["notifications", "reassess"]) }).strict(),
+      z.object({ kind: z.enum(["notifications", "reassess", ...connectedJobs]) }).strict(),
     );
+    if (body.kind !== "notifications" && body.kind !== "reassess")
+      return runConnectedJob(db, body.kind);
     return body.kind === "notifications"
       ? dispatchWorkspaceNotifications(db)
       : reassessWorkspaces(db);

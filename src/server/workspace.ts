@@ -18,6 +18,7 @@ import {
 import type { PolicyVersion } from "@/domain/contracts";
 import { extractContract, validateContract } from "@/integrations/contract-reader";
 import { protectDocument, revealDocument } from "./workspace-secrets";
+import { queueContactSync } from "./email-contacts";
 
 export type BusinessRow = {
   id: string;
@@ -57,6 +58,12 @@ export async function putProfile(db: Database, owner: string, profile: OwnerProf
       "INSERT INTO owner_profiles(owner_id,profile) VALUES($1,$2) ON CONFLICT(owner_id) DO UPDATE SET profile=$2,updated_at=now()",
       [owner, JSON.stringify({ ...profile, consentRecordedAt: new Date().toISOString() })],
     );
+    await queueContactSync(tx, owner, profile.emailAlerts);
+    if (!profile.emailAlerts)
+      await tx.query(
+        "UPDATE notification_jobs SET status='CANCELLED' WHERE status='PENDING' AND plan_id IN (SELECT id FROM change_plans WHERE owner_id=$1)",
+        [owner],
+      );
     if (!profile.emailAlerts)
       await tx.query(
         "UPDATE workspace_notifications SET status='CANCELLED' WHERE channel='EMAIL' AND status='PENDING' AND business_id IN (SELECT id FROM businesses WHERE owner_id=$1)",

@@ -111,3 +111,7 @@ MAWD_DATABASE_URL=postgres://mawd_dev:local-development-only@127.0.0.1:55432/maw
 - `APP_URL`과 접속 Origin이 다르면 쓰기 요청은 403이다. 보안을 끄지 말고 주소 설정을 맞춘다.
 - 실수로 알림 처리가 중단된 CLAIMED 작업은 10분 뒤 UNKNOWN으로 이동한다. 실제 전송 여부 확인 없이 다시 보내지 않는다.
 - 인코딩이 다른 문서·PDF·동적 페이지는 현재 단순 HTML 수집기에서 처리하지 않고 운영자가 확인한다.
+
+## Liner·스티비 작업
+
+추가 백엔드 작업은 `npm run jobs:connected -- contacts|contact-reconcile|policy-watch|weekly`로 실행한다(종류 하나씩 지정). 외부 cron은 생성하지 않았다. [API·설정·실행 순서·검증 게이트](CONNECTED-WORKFLOWS.md)를 따른다. EXAONE과 Alt는 제외했으며 기본 키와 외부 연동 플래그는 비어 있거나 꺼져 있다.

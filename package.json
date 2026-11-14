@@ -17,6 +17,7 @@
     "user:create": "tsx scripts/create-user.ts",
     "jobs:run": "tsx scripts/jobs.ts",
     "jobs:workspace": "tsx scripts/workspace-jobs.ts",
+    "jobs:connected": "tsx scripts/connected-jobs.ts",
     "doctor": "tsx scripts/doctor.ts",
     "test": "vitest run",
     "test:watch": "vitest",

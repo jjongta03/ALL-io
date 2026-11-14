@@ -13,6 +13,7 @@ import {
 import { sendStibee } from "@/integrations/providers";
 import { trackIntegration } from "./integration-status";
 import { getPolicies } from "./service";
+import { weeklySummary } from "./weekly-digest";
 import { currentFacts, evaluateCurrent, workspaceBusinessSchema } from "@/domain/workspace";
 
 type Notice = {
@@ -36,6 +37,26 @@ async function sendable(sql: Sql, j: Notice) {
   if (!b) return null;
   const p = (await getProfile(sql, b.owner_id)).profile;
   if (!p?.emailAlerts || j.channel !== "EMAIL") return null;
+  if (
+    getConfig().emailTransport === "stibee" &&
+    process.env.STIBEE_CONTACT_SYNC_ENABLED === "true"
+  ) {
+    if (
+      !(
+        await sql.query(
+          "SELECT owner_id FROM email_contacts WHERE owner_id=$1 AND desired=true AND sync_status='APPLIED' AND remote_status='subscribed'",
+          [b.owner_id],
+        )
+      ).length
+    )
+      return null;
+  }
+  if (j.kind === "WEEKLY_DIGEST") {
+    if (!j.payload.deadline || j.payload.deadline < seoulDate()) return null;
+    const summary = await weeklySummary(sql, b.id);
+    if (!summary) return null;
+    j.payload.title = summary.title;
+  }
   if (j.project_step_id) {
     const r = (
       await sql.query<{ done: boolean; deadline: string | null; deadline_revision: number }>(
@@ -95,14 +116,16 @@ export async function dispatchWorkspaceNotifications(db: Database, now = new Dat
     (!config.liveIntegrations || !process.env.STIBEE_API_KEY || !process.env.STIBEE_AUTO_EMAIL_URL)
   )
     throw new AppError(503, "스티비 전송 설정이 완료되지 않았습니다.");
+  const requireContact =
+    config.emailTransport === "stibee" && process.env.STIBEE_CONTACT_SYNC_ENABLED === "true";
   const jobs = await db.transaction(async (tx) => {
     await tx.query(
       "UPDATE workspace_notifications SET status='UNKNOWN' WHERE channel='EMAIL' AND status='CLAIMED' AND claimed_at < $1::timestamptz - interval '10 minutes'",
       [now],
     );
     const jobs = await tx.query<Notice>(
-      "SELECT * FROM workspace_notifications WHERE channel='EMAIL' AND status='PENDING' AND scheduled_at <= $1 ORDER BY scheduled_at,id LIMIT 50 FOR UPDATE SKIP LOCKED",
-      [now],
+      "SELECT n.* FROM workspace_notifications n WHERE channel='EMAIL' AND status='PENDING' AND scheduled_at <= $1 AND ($2=false OR EXISTS(SELECT 1 FROM businesses b JOIN email_contacts c ON c.owner_id=b.owner_id WHERE b.id=n.business_id AND c.desired=true AND c.sync_status='APPLIED' AND c.remote_status='subscribed')) ORDER BY scheduled_at,id LIMIT 50 FOR UPDATE OF n SKIP LOCKED",
+      [now, requireContact],
     );
     for (const j of jobs)
       await tx.query(
