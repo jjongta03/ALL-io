@@ -23,3 +23,5 @@
 `npm run check`, `npm run format:check`, `npm run build` 및 실행 중인 로컬 서버에 `npm run smoke:access`, `npm run smoke`, `npm run smoke:workspace`를 실행한다. `smoke:auth`는 기존 명령 호환을 위해 방문자 검증의 별칭으로 유지한다. 계정 fixture 준비는 필요하지 않다.
 
 방문자별 계정·토큰 분리, 30일 만료, 기존 계정 보존, 방문자의 관리자·다른 사용자 자원 접근 차단, 잘못된 Origin 차단, 입력 화면 이동과 예전 로그인 경로의 자동 이동을 확인한다. 공개 사이트에는 검증한 커밋을 수동 배포한 뒤 브라우저에서 자동 접속과 로그인 폼 부재를 다시 확인한다.
+
+배포 완료(2026-11-15): 테스트 115개·형식·빌드·로컬 HTTP 및 실제 브라우저 자동 이동을 확인했다. 캐시를 비운 Render 배포가 live로 완료됐고, 공개 HTTPS의 자동 접속·방문자 분리·관리자 차단·로그인 API 비활성 검증을 통과했다. [배포 기록](DEPLOYMENT.md)을 참고한다.
