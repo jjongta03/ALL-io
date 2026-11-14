@@ -128,6 +128,9 @@ test("세션 만료·폐기·잘못된 토큰·운영 모드의 데모 세션은
 });
 test("로그인 이후 목적지는 내부 화면만 허용한다", () => {
   expect(loginDestination("/outbox")).toBe("/outbox");
+  expect(loginDestination("/benefits")).toBe("/benefits");
+  expect(loginDestination("/mypage/owner")).toBe("/mypage/owner");
+  expect(loginDestination("/onboarding/3")).toBe("/onboarding/3");
   expect(loginDestination(`/plans/${randomUUID()}`)).toMatch(/^\/plans\//);
   expect(loginDestination("/plans/new?step=1")).toBe("/plans/new?step=1");
   for (const value of [

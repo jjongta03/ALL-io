@@ -106,6 +106,8 @@ async function main() {
   assert.match(await page.text(), /계정으로 로그인/);
   const protectedPage = await request("/plans/new", { api: false, status: 307 });
   assert.equal(protectedPage.headers.get("location"), "/login?next=%2Fplans%2Fnew");
+  const benefitsPage = await request("/benefits", { api: false, status: 307 });
+  assert.equal(benefitsPage.headers.get("location"), "/login?next=%2Fbenefits");
   await request("session", { method: "POST", body: a, allowedOrigin: null, status: 403 });
   await request("session", {
     method: "POST",

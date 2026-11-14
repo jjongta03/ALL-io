@@ -15,14 +15,14 @@ export default async function LoginPage({
   const next = loginDestination(typeof params.next === "string" ? params.next : undefined);
   if (await getUser()) redirect(next);
   return (
-    <div className="login-page">
+    <div className="aio login-page">
       <Link href="/" className="back-link">
         <ArrowLeft size={16} />
         처음으로
       </Link>
       <div className="login-layout">
         <section className="login-intro" aria-labelledby="login-intro-title">
-          <div className="eyebrow">가게의 다음</div>
+          <div className="aio-eyebrow">ALL-IO</div>
           <h1 id="login-intro-title">
             가게의 다음 걸음,
             <br />
@@ -51,8 +51,8 @@ export default async function LoginPage({
             </div>
           </div>
         </section>
-        <section className="panel login-card" aria-labelledby="login-title">
-          <div className="eyebrow">WELCOME BACK</div>
+        <section className="aio-card login-card" aria-labelledby="login-title">
+          <div className="aio-eyebrow">WELCOME BACK</div>
           <h2 id="login-title">계정으로 로그인</h2>
           <p>발급받은 이메일과 비밀번호를 입력해 주세요.</p>
           <LoginForm next={next} />

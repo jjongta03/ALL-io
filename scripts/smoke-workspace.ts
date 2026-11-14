@@ -155,6 +155,41 @@ async function main() {
   assert.ok(progress.steps.length > 0);
   assert.ok(progress.steps[0].guide.url);
   await request(`v2/projects/${project.id}`, { cookie: other, status: 404 });
+  const pages: [string, string][] = [
+    ["dashboard", "내 사업장"],
+    ["onboarding/1", "사장님 정보를 입력해 주세요"],
+    ["onboarding/2", "현재 사업장을 알려 주세요"],
+    ["onboarding/3", "지난 사업기록을 입력해 주세요"],
+    ["onboarding/4", "근로계약서로 직원을 등록해 주세요"],
+    ["mypage", "마이페이지"],
+    ["mypage/owner", "사장님 정보 수정"],
+    ["mypage/business", "사업장 정보 수정"],
+    ["mypage/history", "지난 사업기록 수정"],
+    ["employees", "직원 관리"],
+    [`employees/${eid}`, "수정 직원"],
+    [`employees/${eid}/edit`, "직원 정보 편집"],
+    ["contracts/new", "근로계약서 스캔"],
+    [`contracts/${scan.id}`, "직원 정보 확인"],
+    ["benefits", "현재 신청 가능한 지원사업"],
+    [`benefits/${policy.policyId}`, policy.title],
+    ["projects", "내 프로젝트"],
+    [`projects/${project.id}`, "프로젝트 체크리스트"],
+    ["documents", "신고 및 서류"],
+    ["schedule", "신청 및 제출 일정"],
+    ["notifications", "이메일 알림 내역"],
+    ["conditions", "준비 중"],
+    ["reevaluate", "재진단"],
+    ["plans", "내 채용 계획"],
+  ];
+  for (const [path, title] of pages) {
+    const page = await fetch(`${origin}/${path}`, { headers: { Cookie: cookie } });
+    assert.equal(page.status, 200, `page ${path}`);
+    assert.ok((await page.text()).includes(title), `page content ${path}`);
+  }
+  for (const path of ["benefits/new", "projects/new", "employees/invalid", "unknown-screen"]) {
+    const page = await fetch(`${origin}/${path}`, { headers: { Cookie: cookie } });
+    assert.equal(page.status, 404, `unknown page ${path}`);
+  }
   for (const step of progress.steps)
     await request(`v2/project-steps/${step.id}`, { method: "PATCH", cookie, body: { done: true } });
   assert.equal(
@@ -285,6 +320,27 @@ async function main() {
     (await request(`v2/businesses/${bid}/dashboard`, { cookie })).body.projects[0].eligibility,
     "RECHECK_REQUIRED",
   );
+  await request(`v2/projects/${project.id}`, {
+    method: "DELETE",
+    cookie,
+    origin: null,
+    body: { confirm: true },
+    status: 403,
+  });
+  await request(`v2/projects/${project.id}`, {
+    method: "DELETE",
+    cookie,
+    body: { confirm: false },
+    status: 422,
+  });
+  await request(`v2/projects/${project.id}`, {
+    method: "DELETE",
+    cookie: other,
+    body: { confirm: true },
+    status: 404,
+  });
+  await request(`v2/projects/${project.id}`, { method: "DELETE", cookie, body: { confirm: true } });
+  await request(`v2/projects/${project.id}`, { cookie, status: 404 });
   await request(`v2/businesses/${bid}/channel-link`, { method: "POST", cookie, status: 404 });
   await request("v2/integrations/channel/bridge", {
     method: "POST",
@@ -293,7 +349,7 @@ async function main() {
     status: 404,
   });
   console.log(
-    "v2 HTTP 스모크 통과: 단계별 입력·소유권·직원 스캔 확인/수정/삭제·현재 혜택·상세·프로젝트·완료/해제·반복 일정·이메일 동의/로컬 보관·주소록 동기화·주간 요약·공고 감시 API·제외한 외부 API 차단",
+    "v2 HTTP 스모크 통과: 화면 24개·잘못된 경로 404·단계별 입력·소유권·직원 스캔 확인/수정/삭제·현재 혜택·상세·프로젝트 완료/해제/삭제·반복 일정·이메일 동의/로컬 보관·주소록 동기화·주간 요약·공고 감시 API·제외한 외부 API 차단",
   );
 }
 main().catch((e) => {

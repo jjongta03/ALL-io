@@ -143,6 +143,10 @@ export async function workspaceApi(req: Request, db: Database, user: User, path:
   }
   if (path[0] === "projects" && path.length === 2 && req.method === "GET")
     return service.projectDetail(db, uuid(path[1]), user.id);
+  if (path[0] === "projects" && path.length === 2 && req.method === "DELETE") {
+    await readJson(req, z.object({ confirm: z.literal(true) }).strict());
+    return service.deleteProject(db, uuid(path[1]), user.id);
+  }
   if (path[0] === "project-steps" && path.length === 2 && req.method === "PATCH")
     return service.changeProjectStep(
       db,

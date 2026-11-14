@@ -88,7 +88,7 @@ export function LoginForm({ next }: { next: string }) {
           {error}
         </p>
       )}
-      <button type="submit" className="button primary login-submit" disabled={busy}>
+      <button type="submit" className="aio-button is-primary login-submit" disabled={busy}>
         {busy ? (
           <>
             <LoaderCircle size={18} className="spin" />

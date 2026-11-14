@@ -3,6 +3,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginDestination } from "@/domain/login";
 import { ArrowRight, LoaderCircle } from "lucide-react";
+export function redirectToLogin() {
+  window.location.replace(
+    `/login?next=${encodeURIComponent(loginDestination(window.location.pathname + window.location.search))}`,
+  );
+}
 
 export async function api<T = { ok: boolean }>(
   path: string,
@@ -16,9 +21,7 @@ export async function api<T = { ok: boolean }>(
   });
   const data = await response.json();
   if (response.status === 401 && path !== "session") {
-    window.location.replace(
-      `/login?next=${encodeURIComponent(loginDestination(window.location.pathname + window.location.search))}`,
-    );
+    redirectToLogin();
   }
   if (!response.ok)
     throw new Error(

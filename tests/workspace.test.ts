@@ -111,6 +111,29 @@ test("4단계 입력은 앞서 저장한 정보를 유지하며 직원 수 직�
   );
   expect(currentFacts({ ...facts(), rosterConfirmed: false }, 0).currentHeadcount).toBeNull();
 });
+test("프로젝트 삭제는 소유자를 확인하고 단계·알림만 함께 제거하며 다시 시작할 수 있다", async () => {
+  const bid = await business(),
+    policy = await demoPolicy();
+  await w.saveEmployee(db, bid, owner, employee());
+  const { id } = await w.startProject(db, bid, owner, policy.id);
+  const detail = await w.projectDetail(db, id, owner);
+  const step = detail.steps[0].id;
+  expect(
+    await db.query("SELECT id FROM workspace_notifications WHERE project_step_id=$1", [step]),
+  ).not.toHaveLength(0);
+  await expect(w.deleteProject(db, id, other)).rejects.toMatchObject({ status: 404 });
+  expect((await w.projectDetail(db, id, owner)).total).toBe(1);
+  await w.deleteProject(db, id, owner);
+  await expect(w.projectDetail(db, id, owner)).rejects.toMatchObject({ status: 404 });
+  expect(await db.query("SELECT id FROM project_steps WHERE project_id=$1", [id])).toHaveLength(0);
+  expect(
+    await db.query("SELECT id FROM workspace_notifications WHERE project_step_id=$1", [step]),
+  ).toHaveLength(0);
+  expect(
+    await db.query("SELECT id FROM workspace_evaluations WHERE business_id=$1", [bid]),
+  ).not.toHaveLength(0);
+  expect((await w.startProject(db, bid, owner, policy.id)).id).not.toBe(id);
+});
 test("모르는 보험·나이·급여를 거짓이나 0으로 보정하지 않는다", () => {
   const f = currentFacts(facts(), 0);
   expect(f.ownerAgeYears).toBeNull();

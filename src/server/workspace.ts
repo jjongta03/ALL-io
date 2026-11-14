@@ -15,7 +15,7 @@ import {
   type EmployeeDetails,
   type RecurringDocument,
 } from "@/domain/workspace";
-import type { PolicyVersion } from "@/domain/contracts";
+import type { PolicyVersion, TaskTemplate } from "@/domain/contracts";
 import { extractContract, validateContract } from "@/integrations/contract-reader";
 import { protectDocument, revealDocument } from "./workspace-secrets";
 import { queueContactSync } from "./email-contacts";
@@ -459,10 +459,11 @@ export async function projectDetail(sql: Sql, id: string, owner: string) {
     )[0] ?? notFound();
   const steps = await sql.query<{
     id: string;
+    title: string;
     done: boolean;
     deadline: string | null;
     deadline_revision: number;
-    guide: unknown;
+    guide: TaskTemplate;
   }>(
     "SELECT *,deadline::text AS deadline FROM project_steps WHERE project_id=$1 ORDER BY position",
     [id],
@@ -497,6 +498,20 @@ export async function projects(db: Sql, bid: string, owner: string) {
     [bid],
   );
   return Promise.all(rows.map((r) => projectDetail(db, r.id, owner)));
+}
+export async function deleteProject(db: Database, id: string, owner: string) {
+  await db.transaction(async (tx) => {
+    const { project } = await projectDetail(tx, id, owner);
+    await ownBusiness(tx, project.business_id, owner, true);
+    // Steps, their pending notices and local outbox entries cascade together.
+    // Policies and immutable evaluation snapshots remain available.
+    await tx.query("DELETE FROM benefit_projects WHERE id=$1", [id]);
+    await tx.query(
+      "INSERT INTO audit_events(id,actor_id,action,entity_id) VALUES($1,$2,'project.deleted',$3)",
+      [randomUUID(), owner, id],
+    );
+  });
+  return { deleted: true };
 }
 export async function startProject(db: Database, bid: string, owner: string, policyId: string) {
   return db.transaction(async (tx) => {
