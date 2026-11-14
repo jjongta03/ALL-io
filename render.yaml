@@ -1,0 +1,48 @@
+# Template only. No cloud resources were created by this task.
+# Select a paid plan/budget and review the provider terms before provisioning.
+services:
+  - type: web
+    name: mawd-business-change
+    runtime: node
+    buildCommand: npm ci && npm run build
+    preDeployCommand: npm run db:migrate
+    startCommand: npm run start:host
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: APP_ENV
+        value: production
+      - key: APP_MODE
+        value: live
+      - key: APP_URL
+        sync: false
+      - key: MAWD_DATABASE_URL
+        sync: false
+      - key: EMAIL_TRANSPORT
+        value: local
+      - key: LIVE_INTEGRATIONS_ENABLED
+        value: "false"
+      - key: SOURCE_COLLECTION_ENABLED
+        value: "false"
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+  - type: cron
+    name: mawd-notifications
+    runtime: node
+    schedule: "0 0 * * *"
+    buildCommand: npm ci
+    startCommand: npm run jobs:run -- notifications
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: APP_MODE
+        value: live
+      - key: APP_URL
+        sync: false
+      - key: MAWD_DATABASE_URL
+        sync: false
+      - key: EMAIL_TRANSPORT
+        value: local
+      - key: LIVE_INTEGRATIONS_ENABLED
+        value: "false"

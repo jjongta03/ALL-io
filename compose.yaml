@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: mawd_dev
+      POSTGRES_USER: mawd_dev
+      POSTGRES_PASSWORD: local-development-only
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - mawd_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mawd_dev -d mawd_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  mawd_postgres:
