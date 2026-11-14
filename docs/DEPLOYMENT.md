@@ -9,14 +9,14 @@
 - 실제 도메인은 Render가 제공한 `RENDER_EXTERNAL_URL`을 사용한다. 필요하면 명시적 `APP_URL`로 재정의한다. 요청 헤더로 Origin 허용 범위를 결정하지 않는다.
 - 빌드는 `npm ci --include=dev && npm run build`, 시작은 `npm run deploy:start`다. Render의 `PORT`와 `0.0.0.0`으로 서버를 시작한다. 무료 플랜에서 제공하지 않는 pre-deploy 명령 대신 시작 전에 마이그레이션을 실행한다.
 - PostgreSQL 마이그레이션은 단일 트랜잭션과 advisory lock으로 중복 시작을 직렬화하고, 기존 체크섬 검사를 유지한다. 기존 마이그레이션 파일을 수정하지 않는다.
-- `BOOTSTRAP_OWNER_EMAIL`은 사용자가 지정한 로그인 이메일이다. 초기 비밀번호는 Render에서 `BOOTSTRAP_OWNER_PASSWORD`로 생성한다. 최초 운영 계정 하나만 발급하며, 다시 시작해도 기존 비밀번호·권한을 덮어쓰지 않는다. 기존 계정이 있으면 새 계정을 추가하지 않는다.
+- 최초 배포 때 발급한 운영 계정은 보존한다. 후속 로그인 제거 요청에 따라 현재 서버 시작은 새 로그인 계정을 발급하지 않고, 브라우저별 방문자 OWNER 세션으로 연결한다. 이전 초기 계정 환경 변수는 사용하지 않는다.
 - 계약서 암호화 키는 Render에서 생성한 `CONTRACT_ENCRYPTION_KEY_BASE64` 256-bit 값이다. 기존 64자리 hex `CONTRACT_ENCRYPTION_KEY`도 지원하되 동시에 설정하면 거절한다. 재배포할 때 이 키를 지우거나 다시 생성하지 않는다.
 - 키 생성 및 로그인 계정 발급은 실제 이메일 발송을 수반하지 않는다. 외부 API 키는 비어 있고 이메일은 로컬 보관, Liner 검색/초안·계약서 인식·스티비 동기화는 비활성이다. 실제 조건을 검수·승인하기 전에는 지원사업이 비어 있을 수 있다.
 - 초기 배포 이후 자동 배포와 Blueprint 자동 동기화는 꺼 둔다. 변경된 소스·설정을 검토하고 명시적으로 배포한다.
 
 ## 운영자 접근
 
-공개 회원가입은 제공하지 않는다. 지정한 이메일로 로그인하고, 초기 비밀번호는 해당 Render 웹 서비스의 Environment에서 `BOOTSTRAP_OWNER_PASSWORD`를 확인한다. 비밀번호를 저장소·로그·공개 문서에 복사하지 않는다. 추가 사용자 발급은 승인된 운영 환경에서 기존 `user:create` CLI를 사용한다.
+사용자는 로그인 없이 바로 접속한다. 기존 관리자 데이터와 권한은 일반 방문자에게 공개하지 않는다. [현재 방문자 접속과 권한 경계](VISITOR-ACCESS.md)를 따른다.
 
 ## 무료 체험 제한
 
@@ -28,7 +28,7 @@
 
 실제 공개 서버에서는 배포 성공 상태, HTTPS `/api/health`, `/login`, 비로그인 자원 접근 401, 데모 세션 차단, 잘못된 Origin 차단과 DB 마이그레이션·최초 계정 생성 상태를 확인한다. 제공자 상태가 성공하거나 실제 HTTPS 응답을 확인하기 전에는 배포 완료로 보고하지 않는다.
 
-상태: **배포 완료**. 공개 주소는 [https://allio-web-trial.onrender.com](https://allio-web-trial.onrender.com), 로그인은 [/login](https://allio-web-trial.onrender.com/login)이다.
+상태: **배포 완료**. 공개 주소는 [https://allio-web-trial.onrender.com](https://allio-web-trial.onrender.com), 시작 화면은 루트(`/`)다. 이전 `/login` 주소는 자동 접속으로 이동한다.
 
 - Render 배포 `dep-dbscgcmi0phs73co7g4g`가 2026-11-15 05:46(한국시간)에 `live`로 완료됐다.
 - 실행 소스 커밋: `11b6267fee864f82028880de7ad6b4d658ededbd`. 이후 이 문서와 README의 링크만 갱신했다.
@@ -39,3 +39,7 @@
 - 초기 비밀번호와 암호화 키는 Render 환경 변수에만 보관한다. 해당 계정의 실제 비밀번호를 읽거나 채팅·GitHub에 게시하지 않았다.
 
 공식 근거: [무료 플랜](https://render.com/docs/free), [Blueprint 규격](https://render.com/docs/blueprint-spec), [자동 제공 환경 변수](https://render.com/docs/environment-variables), [배포 단계](https://render.com/docs/deploys).
+
+## 로그인 제거 후속 배포
+
+브라우저별 방문자 접속 변경을 로컬 검증 후 같은 웹 서버에 배포한다. 기존 DB·암호화 키·무료 플랜·자동 배포 비활성 설정은 보존한다. 실제 완료 상태는 배포 후 갱신한다.

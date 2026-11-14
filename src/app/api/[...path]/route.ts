@@ -1,8 +1,14 @@
 import { z } from "zod";
 import { type NextRequest } from "next/server";
-import { route, readJson, rateLimit } from "@/server/http";
+import { route, readJson, rateLimit, readTextLimited } from "@/server/http";
 import { getDb } from "@/server/db";
-import { requireUser, startDemoSession, setSession, clearSession } from "@/server/auth";
+import {
+  requireUser,
+  startDemoSession,
+  startVisitorSession,
+  getUser,
+  clearSession,
+} from "@/server/auth";
 import { businessSchema, hireSchema, definitionSchema, dateSchema } from "@/domain/contracts";
 import {
   createPlan,
@@ -33,7 +39,6 @@ import {
 } from "@/integrations/providers";
 import { getConfig } from "@/server/config";
 import { LinerRuleDraftGenerator } from "@/integrations/drafting";
-import { authenticateAccount, loginSchema } from "@/server/accounts";
 import { workspaceApi } from "@/server/workspace-api";
 
 export const runtime = "nodejs";
@@ -51,13 +56,24 @@ const handler = route(async (req: NextRequest) => {
     await startDemoSession();
     return { ok: true };
   }
-  if (key === "POST session") {
-    rateLimit("login:global", 120);
-    const body = await readJson(req, loginSchema);
-    const user = await authenticateAccount(await getDb(), body);
-    await setSession(user.id);
+  if (key === "POST visitor") {
+    const raw = await readTextLimited(req, 1024);
+    if (raw.trim()) {
+      if (!req.headers.get("content-type")?.startsWith("application/json"))
+        throw new AppError(415, "JSON 형식으로 요청하세요.");
+      let input: unknown;
+      try {
+        input = JSON.parse(raw);
+      } catch {
+        throw new AppError(400, "JSON 요청을 읽을 수 없습니다.");
+      }
+      z.object({}).strict().parse(input);
+    }
+    if (!(await getUser())) rateLimit("visitor:create", 200);
+    await startVisitorSession();
     return { ok: true };
   }
+  if (key === "POST session") return notFound();
   if (key === "DELETE session") {
     await clearSession();
     return { ok: true };

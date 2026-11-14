@@ -1,0 +1,4 @@
+ALTER TABLE users ADD COLUMN is_guest boolean NOT NULL DEFAULT false;
+ALTER TABLE users ADD CONSTRAINT guest_owner_only CHECK (
+ NOT is_guest OR (role='OWNER' AND password_hash IS NULL AND is_demo=false)
+);

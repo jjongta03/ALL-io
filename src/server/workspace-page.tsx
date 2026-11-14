@@ -40,7 +40,7 @@ export async function WorkspacePage({ screen }: { screen: string[] }) {
   const data: WorkspaceData = {
     profile: profile.profile,
     draft,
-    email: user.email,
+    email: user.is_guest ? "" : user.email,
     isAdmin: user.role === "ADMIN",
     business,
     roster: { employees: [], total: 0, currentCount: 0 },

@@ -2,10 +2,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginDestination } from "@/domain/login";
-import { ArrowRight, LoaderCircle } from "lucide-react";
-export function redirectToLogin() {
+import { LoaderCircle } from "lucide-react";
+export function reconnectVisitor() {
   window.location.replace(
-    `/login?next=${encodeURIComponent(loginDestination(window.location.pathname + window.location.search))}`,
+    `/start?next=${encodeURIComponent(loginDestination(window.location.pathname + window.location.search))}`,
   );
 }
 
@@ -21,7 +21,7 @@ export async function api<T = { ok: boolean }>(
   });
   const data = await response.json();
   if (response.status === 401 && path !== "session") {
-    redirectToLogin();
+    reconnectVisitor();
   }
   if (!response.ok)
     throw new Error(
@@ -95,13 +95,6 @@ export function ActionButton({
         </p>
       )}
     </div>
-  );
-}
-export function DemoStart() {
-  return (
-    <ActionButton path="demo" href="/onboarding/1" className="button primary large">
-      로컬 데모 시작 <ArrowRight size={18} />
-    </ActionButton>
   );
 }
 export function FeedbackForm({ evaluationId }: { evaluationId: string }) {

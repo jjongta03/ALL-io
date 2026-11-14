@@ -2,7 +2,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { api, redirectToLogin } from "@/components/actions";
+import { api, reconnectVisitor } from "@/components/actions";
 import { onboardingState, ownerRequiredError } from "@/domain/onboarding";
 import type {
   OwnerProfile,
@@ -755,7 +755,7 @@ export function ContractUpload({ data }: { data: WorkspaceData }) {
                 body: form,
               });
               const result = await response.json();
-              if (response.status === 401) redirectToLogin();
+              if (response.status === 401) reconnectVisitor();
               if (!response.ok) throw new Error(result.error || "계약서를 읽지 못했습니다.");
               router.push(`/contracts/${result.id}`);
             } catch (e) {

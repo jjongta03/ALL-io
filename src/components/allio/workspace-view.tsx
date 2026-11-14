@@ -356,11 +356,6 @@ function MyPage({ data }: { data: WorkspaceData }) {
           </Card>
         </div>
       </div>
-      <div className="aio-account-tools">
-        <MutationButton path="session" method="DELETE" href="/login">
-          로그아웃
-        </MutationButton>
-      </div>
     </>
   );
 }

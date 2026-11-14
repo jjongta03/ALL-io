@@ -49,7 +49,7 @@ async function main() {
   const second = await request("demo", { method: "POST" }),
     other = second.response.headers.get("set-cookie")!.split(";")[0];
   const landing = await fetch(`${origin}/`);
-  assert.ok((await landing.text()).includes("사장님 정보를 입력해 주세요"));
+  assert.ok((await landing.text()).includes("내 사업장 화면을 준비"));
   async function expectOnboarding(path: string, stage: number) {
     const page = await fetch(`${origin}/${path}`, {
       headers: { Cookie: other },
