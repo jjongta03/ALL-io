@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { ArrowUpRight, Check, Bell, Files, Sparkles } from "lucide-react";
 import { getUser } from "@/server/auth";
 import { getConfig } from "@/server/config";
-import { DemoStart, LoginForm } from "@/components/actions";
+import { DemoStart } from "@/components/actions";
 export default async function Home() {
   if (await getUser()) redirect("/dashboard");
   return (
@@ -24,9 +24,9 @@ export default async function Home() {
       </p>
       <div className="landing-actions">
         {getConfig().demo && <DemoStart />}
-        <a className="button text-button" href="#login">
-          계정으로 시작하기 <ArrowUpRight size={16} />
-        </a>
+        <Link className="button text-button" href="/login">
+          계정으로 로그인 <ArrowUpRight size={16} />
+        </Link>
       </div>
       <div className="journey-preview">
         <div>
@@ -64,10 +64,14 @@ export default async function Home() {
             </li>
           </ul>
         </div>
-        <section id="login" className="panel login-panel">
-          <h2>발급받은 계정으로 로그인</h2>
-          <LoginForm />
-          <p className="small-note">개발용 데모는 별도 가입 없이 시작할 수 있습니다.</p>
+        <section className="panel login-panel">
+          <h2>저장한 준비를 이어가세요</h2>
+          <p className="small-note">
+            발급받은 이메일과 비밀번호로 내 계획과 체크리스트를 확인하세요.
+          </p>
+          <Link href="/login" className="button primary">
+            로그인하기 <ArrowUpRight size={16} />
+          </Link>
         </section>
       </div>
       <Link href="/dashboard" className="sr-only">

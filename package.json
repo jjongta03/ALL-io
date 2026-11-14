@@ -25,6 +25,7 @@
     "check": "npm run typecheck && npm test",
     "smoke": "tsx scripts/smoke.ts",
     "smoke:workspace": "tsx scripts/smoke-workspace.ts",
+    "smoke:auth": "tsx scripts/smoke-auth.ts",
     "format": "prettier --write --ignore-unknown src scripts tests docs db .github *.json *.ts *.yaml README.md AGENTS.md",
     "format:check": "prettier --check --ignore-unknown src scripts tests docs db .github *.json *.ts *.yaml README.md AGENTS.md"
   },

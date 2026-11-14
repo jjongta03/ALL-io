@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { loginDestination } from "@/domain/login";
 import { ArrowRight, LoaderCircle } from "lucide-react";
 
 export async function api<T = { ok: boolean }>(
@@ -14,6 +15,11 @@ export async function api<T = { ok: boolean }>(
     body: body === undefined ? undefined : JSON.stringify(body),
   });
   const data = await response.json();
+  if (response.status === 401 && path !== "session") {
+    window.location.replace(
+      `/login?next=${encodeURIComponent(loginDestination(window.location.pathname + window.location.search))}`,
+    );
+  }
   if (!response.ok)
     throw new Error(
       data.fields?.length
@@ -31,6 +37,7 @@ export function ActionButton({
   className = "button secondary",
   confirmText,
   successMessage,
+  replace = false,
 }: {
   children: React.ReactNode;
   path: string;
@@ -40,6 +47,7 @@ export function ActionButton({
   className?: string;
   confirmText?: string;
   successMessage?: string;
+  replace?: boolean;
 }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -58,7 +66,10 @@ export function ActionButton({
           try {
             await api(path, method, body);
             setSuccess(successMessage ?? "");
-            if (href) router.push(href);
+            if (href) {
+              if (replace) router.replace(href);
+              else router.push(href);
+            }
             router.refresh();
           } catch (e) {
             setError((e as Error).message);
@@ -88,48 +99,6 @@ export function DemoStart() {
     <ActionButton path="demo" href="/dashboard" className="button primary large">
       로컬 데모 시작 <ArrowRight size={18} />
     </ActionButton>
-  );
-}
-export function LoginForm() {
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const router = useRouter();
-  return (
-    <form
-      className="login-form"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        const f = new FormData(e.currentTarget);
-        setBusy(true);
-        setError("");
-        try {
-          await api("session", "POST", { email: f.get("email"), password: f.get("password") });
-          router.push("/dashboard");
-          router.refresh();
-        } catch (e) {
-          setError((e as Error).message);
-        } finally {
-          setBusy(false);
-        }
-      }}
-    >
-      <label>
-        이메일
-        <input name="email" type="email" required autoComplete="username" />
-      </label>
-      <label>
-        비밀번호
-        <input name="password" type="password" required autoComplete="current-password" />
-      </label>
-      <button className="button secondary" disabled={busy}>
-        계정으로 로그인
-      </button>
-      {error && (
-        <p className="error-inline" role="alert">
-          {error}
-        </p>
-      )}
-    </form>
   );
 }
 export function FeedbackForm({ evaluationId }: { evaluationId: string }) {

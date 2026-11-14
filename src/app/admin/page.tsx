@@ -3,7 +3,7 @@ import { getDb } from "@/server/db";
 import { listReviews } from "@/server/service";
 import { AdminConsole } from "@/components/admin-console";
 export default async function Admin() {
-  await pageUser(true);
+  await pageUser(true, "/admin");
   const db = await getDb();
   const reviews = await listReviews(db);
   const operations = {

@@ -69,7 +69,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                 <ActionButton
                   path="session"
                   method="DELETE"
-                  href="/"
+                  href="/login"
+                  replace
                   className="button text-button"
                 >
                   로그아웃
@@ -80,6 +81,15 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <div className="workspace">
             <header className="topbar">
               <span>사업 변화 준비 도우미</span>
+              {user ? (
+                <span className="account-email" title={user.email}>
+                  {user.is_demo ? "로컬 데모 계정" : user.email}
+                </span>
+              ) : (
+                <Link href="/login" className="topbar-login">
+                  로그인
+                </Link>
+              )}
               <span className="topbar-note">
                 {config.demo ? "DEMO · 외부 메일 발송 없음" : "직원 채용 준비"}
               </span>
