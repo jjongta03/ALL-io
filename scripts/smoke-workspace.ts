@@ -48,6 +48,87 @@ async function main() {
     cookie = login.response.headers.get("set-cookie")!.split(";")[0];
   const second = await request("demo", { method: "POST" }),
     other = second.response.headers.get("set-cookie")!.split(";")[0];
+  const landing = await fetch(`${origin}/`);
+  assert.ok((await landing.text()).includes("사장님 정보를 입력해 주세요"));
+  async function expectOnboarding(path: string, stage: number) {
+    const page = await fetch(`${origin}/${path}`, {
+      headers: { Cookie: other },
+      redirect: "manual",
+    });
+    const html = await page.text();
+    const target = `/onboarding/${stage}`;
+    assert.ok(
+      page.headers.get("location") === target ||
+        (html.includes("NEXT_REDIRECT") && html.includes(target)),
+      `${path} must redirect to ${target}`,
+    );
+  }
+  await expectOnboarding("dashboard", 1);
+  await expectOnboarding("benefits", 1);
+  await expectOnboarding("onboarding/4", 1);
+  const setupOwner = {
+    name: "최초 입력 사장님",
+    birthDate: "1990-01-01",
+    phone: "01012345678",
+    email: "onboarding@example.com",
+    emailAlerts: false,
+  };
+  for (const field of ["name", "birthDate", "phone", "email"])
+    await request("v2/onboarding", {
+      method: "PUT",
+      cookie: other,
+      body: { stage: 2, completed: false, owner: { ...setupOwner, [field]: null } },
+      status: 422,
+    });
+  await request("v2/onboarding", {
+    method: "PUT",
+    cookie: other,
+    body: { stage: 2, completed: false, owner: setupOwner },
+  });
+  await expectOnboarding("dashboard", 2);
+  await request("v2/onboarding", { method: "PUT", cookie: other, body: { stage: 4 } });
+  await expectOnboarding("dashboard", 3);
+  const setupFacts = {
+    nickname: "최초 입력 확인 사업장",
+    industry: "RESTAURANT",
+    region: "부산",
+    businessType: "SOLE",
+    startedOn: null,
+    revenueBand: null,
+    pastBusinesses: [],
+    pastBusinessHistoryConfirmed: true,
+    rosterConfirmed: false,
+  };
+  const setupBusiness = (
+    await request("v2/businesses", {
+      method: "POST",
+      cookie: other,
+      body: setupFacts,
+    })
+  ).body;
+  await expectOnboarding("dashboard", 4);
+  await request("v2/profile", {
+    method: "PUT",
+    cookie: other,
+    body: setupOwner,
+  });
+  await expectOnboarding("dashboard", 4);
+  await request(`v2/businesses/${setupBusiness.id}`, {
+    method: "PUT",
+    cookie: other,
+    body: { revision: 1, facts: { ...setupFacts, rosterConfirmed: true } },
+  });
+  await expectOnboarding("dashboard", 4);
+  await request("v2/onboarding", {
+    method: "PUT",
+    cookie: other,
+    body: { stage: 4, completed: true, owner: setupOwner },
+  });
+  const readyDashboard = await fetch(`${origin}/dashboard`, { headers: { Cookie: other } });
+  assert.equal(readyDashboard.status, 200);
+  const readyHtml = await readyDashboard.text();
+  assert.ok(readyHtml.includes("내 사업장") && readyHtml.includes("음식점"));
+  assert.ok(!readyHtml.includes("NEXT_REDIRECT"));
   const profile = {
     name: "합성 사장",
     birthDate: "1990-01-01",
@@ -241,7 +322,7 @@ async function main() {
   assert.ok(inbox.every((n: { channel: string }) => n.channel === "EMAIL"));
   assert.ok(inbox.some((n: { status: string }) => n.status === "LOCAL_ONLY"));
   assert.equal((await request("v2/email-contact", { cookie })).body.contact.desired, true);
-  assert.equal((await request("v2/email-contact", { cookie: other })).body.contact, null);
+  assert.equal((await request("v2/email-contact", { cookie: other })).body.contact.desired, false);
   await request("v2/admin/jobs", {
     method: "POST",
     cookie,
@@ -349,7 +430,7 @@ async function main() {
     status: 404,
   });
   console.log(
-    "v2 HTTP 스모크 통과: 화면 24개·잘못된 경로 404·단계별 입력·소유권·직원 스캔 확인/수정/삭제·현재 혜택·상세·프로젝트 완료/해제/삭제·반복 일정·이메일 동의/로컬 보관·주소록 동기화·주간 요약·공고 감시 API·제외한 외부 API 차단",
+    "v2 HTTP 스모크 통과: 최초 입력·단계 복귀·완료 후 대시보드·화면 24개·잘못된 경로 404·소유권·직원 스캔 확인/수정/삭제·현재 혜택·상세·프로젝트 완료/해제/삭제·반복 일정·이메일 동의/로컬 보관·주소록 동기화·주간 요약·공고 감시 API·제외한 외부 API 차단",
   );
 }
 main().catch((e) => {

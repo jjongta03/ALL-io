@@ -15,6 +15,7 @@ export const ownerProfileSchema = z
       .regex(/^01[016789]\d{7,8}$/)
       .nullable(),
     emailAlerts: z.boolean(),
+    email: z.email().max(254).nullable().optional(),
   })
   .strict();
 export type OwnerProfile = z.infer<typeof ownerProfileSchema>;
@@ -84,6 +85,7 @@ export const emptyScanDraft = {
 export const onboardingSchema = z
   .object({
     stage: z.number().int().min(1).max(4),
+    completed: z.boolean().optional(),
     owner: ownerProfileSchema.optional(),
     business: workspaceBusinessSchema.optional(),
   })

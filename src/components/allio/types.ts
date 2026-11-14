@@ -39,7 +39,12 @@ export type Benefits = Omit<Awaited<ReturnType<typeof eligibleBenefits>>, "evalu
 };
 export type WorkspaceData = {
   profile: OwnerProfile | null;
-  draft: { stage?: number; owner?: OwnerProfile; business?: WorkspaceBusiness } | null;
+  draft: {
+    stage?: number;
+    completed?: boolean;
+    owner?: OwnerProfile;
+    business?: WorkspaceBusiness;
+  } | null;
   email: string;
   isAdmin: boolean;
   business: Business | null;

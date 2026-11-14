@@ -11,6 +11,7 @@ export function AllioShell({
   demo: boolean;
 }) {
   const path = usePathname();
+  const entering = path.startsWith("/onboarding") || (!signedIn && path === "/" && demo);
   const legacy = /^\/(admin|plans|outbox)(\/|$)/.test(path);
   const segments = path.split("/").filter(Boolean);
   const frames: Record<string, string> = {
@@ -59,18 +60,20 @@ export function AllioShell({
             ALL-IO
           </Link>
           <span className="aio-tagline">내 사업장 혜택·행정 관리</span>
-          <nav aria-label="주요 메뉴">
-            {links.map(([href, label]) => (
-              <Link
-                key={href}
-                href={signedIn ? href : "/"}
-                className={path === href || path.startsWith(href + "/") ? "active" : ""}
-                aria-current={path === href ? "page" : undefined}
-              >
-                {label}
-              </Link>
-            ))}
-          </nav>
+          {!entering && (
+            <nav aria-label="주요 메뉴">
+              {links.map(([href, label]) => (
+                <Link
+                  key={href}
+                  href={signedIn ? href : "/"}
+                  className={path === href || path.startsWith(href + "/") ? "active" : ""}
+                  aria-current={path === href ? "page" : undefined}
+                >
+                  {label}
+                </Link>
+              ))}
+            </nav>
+          )}
         </div>
       </header>
       <main id="main" className={legacy ? "aio-main aio-legacy" : "aio-main"}>

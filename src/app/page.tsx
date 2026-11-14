@@ -1,9 +1,39 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/server/auth";
 import { getConfig } from "@/server/config";
-import { DemoStart, LoginForm } from "@/components/actions";
+import { LoginForm } from "@/components/actions";
+import { ProfileEditor } from "@/components/allio/forms";
+import { seoulDate } from "@/domain/dates";
 export default async function Home() {
   if (await getUser()) redirect("/dashboard");
+  if (getConfig().demo)
+    return (
+      <div className="aio">
+        <ProfileEditor
+          onboarding
+          startDemo
+          requestedStage={1}
+          data={{
+            profile: null,
+            draft: null,
+            email: "",
+            isAdmin: false,
+            business: null,
+            roster: { employees: [], total: 0, currentCount: 0 },
+            benefits: {
+              evaluationId: null,
+              needsReevaluation: false,
+              benefits: [],
+              completed: [],
+              isEligibilityGuarantee: false,
+            },
+            projects: [],
+            documents: [],
+            today: seoulDate(),
+          }}
+        />
+      </div>
+    );
   return (
     <div className="aio aio-welcome">
       <div>
@@ -18,7 +48,6 @@ export default async function Home() {
           <br />
           사업장과 직원 정보를 입력하고 한곳에서 관리하세요.
         </p>
-        {getConfig().demo && <DemoStart />}
         <div className="aio-welcome-points">
           <span>01 &nbsp; 내 사업장 정보</span>
           <span>02 &nbsp; 혜택 확인</span>
@@ -29,7 +58,6 @@ export default async function Home() {
         <h2>ALL-IO 시작하기</h2>
         <p>발급받은 계정으로 로그인하세요.</p>
         <LoginForm />
-        {getConfig().demo && <small>로컬 데모는 가입 없이 시작할 수 있어요.</small>}
       </section>
     </div>
   );

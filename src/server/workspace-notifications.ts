@@ -36,6 +36,7 @@ async function sendable(sql: Sql, j: Notice) {
   )[0];
   if (!b) return null;
   const p = (await getProfile(sql, b.owner_id)).profile;
+  b.email = p?.email ?? b.email;
   if (!p?.emailAlerts || j.channel !== "EMAIL") return null;
   if (
     getConfig().emailTransport === "stibee" &&

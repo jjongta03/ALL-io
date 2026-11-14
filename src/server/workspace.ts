@@ -10,6 +10,7 @@ import {
   evaluateCurrent,
   occurrenceDate,
   workspaceBusinessSchema,
+  onboardingSchema,
   type WorkspaceBusiness,
   type OwnerProfile,
   type EmployeeDetails,
@@ -19,6 +20,7 @@ import type { PolicyVersion, TaskTemplate } from "@/domain/contracts";
 import { extractContract, validateContract } from "@/integrations/contract-reader";
 import { protectDocument, revealDocument } from "./workspace-secrets";
 import { queueContactSync } from "./email-contacts";
+import { ownerRequiredError } from "@/domain/onboarding";
 
 export type BusinessRow = {
   id: string;
@@ -54,9 +56,13 @@ export async function getProfile(sql: Sql, owner: string) {
 export async function putProfile(db: Database, owner: string, profile: OwnerProfile) {
   await db.transaction(async (tx) => {
     await tx.query("SELECT id FROM users WHERE id=$1 FOR UPDATE", [owner]);
+    const saved =
+      profile.email === undefined
+        ? { ...profile, email: (await getProfile(tx, owner)).profile?.email }
+        : profile;
     await tx.query(
       "INSERT INTO owner_profiles(owner_id,profile) VALUES($1,$2) ON CONFLICT(owner_id) DO UPDATE SET profile=$2,updated_at=now()",
-      [owner, JSON.stringify({ ...profile, consentRecordedAt: new Date().toISOString() })],
+      [owner, JSON.stringify({ ...saved, consentRecordedAt: new Date().toISOString() })],
     );
     await queueContactSync(tx, owner, profile.emailAlerts);
     if (!profile.emailAlerts)
@@ -82,6 +88,11 @@ export async function putProfile(db: Database, owner: string, profile: OwnerProf
   return getProfile(db, owner);
 }
 export async function saveOnboarding(db: Database, owner: string, draft: unknown) {
+  const value = onboardingSchema.parse(draft);
+  if (value.completed !== undefined && (value.stage > 1 || value.completed)) {
+    const message = ownerRequiredError(value.owner);
+    if (message) throw new AppError(422, message);
+  }
   await db.query(
     "INSERT INTO owner_profiles(owner_id,onboarding) VALUES($1,$2) ON CONFLICT(owner_id) DO UPDATE SET onboarding=owner_profiles.onboarding || $2::jsonb,updated_at=now()",
     [owner, JSON.stringify(draft)],

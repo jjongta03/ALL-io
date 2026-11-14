@@ -1,4 +1,4 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { pageUser } from "./page-auth";
 import { getDb } from "./db";
 import * as service from "./workspace";
@@ -6,6 +6,7 @@ import { notificationInbox } from "./workspace-notifications";
 import { workspaceBusinessSchema } from "@/domain/workspace";
 import { seoulDate } from "@/domain/dates";
 import { AppError } from "./errors";
+import { onboardingState } from "@/domain/onboarding";
 import { WorkspaceView } from "@/components/allio/workspace-view";
 import type {
   Business,
@@ -23,9 +24,22 @@ export async function WorkspacePage({ screen }: { screen: string[] }) {
     [user.id],
   );
   let business = rows.find((b) => workspaceBusinessSchema.safeParse(b.facts).success) ?? null;
+  const draft = profile.onboarding as WorkspaceData["draft"];
+  const onboarding = onboardingState(profile.profile, business, draft);
+  const [area, requestedStage] = screen;
+  if (area === "onboarding" && !requestedStage)
+    redirect(`/onboarding/${onboarding.complete ? 1 : onboarding.stage}`);
+  if (!onboarding.complete) {
+    const employeeEntry = onboarding.stage === 4 && ["employees", "contracts"].includes(area);
+    if (
+      (area !== "onboarding" && !employeeEntry) ||
+      (area === "onboarding" && Number(requestedStage) > onboarding.stage)
+    )
+      redirect(`/onboarding/${onboarding.stage}`);
+  }
   const data: WorkspaceData = {
     profile: profile.profile,
-    draft: profile.onboarding as WorkspaceData["draft"],
+    draft,
     email: user.email,
     isAdmin: user.role === "ADMIN",
     business,

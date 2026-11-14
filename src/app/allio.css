@@ -1,4 +1,5 @@
 :root {
+  scrollbar-gutter: stable;
   --aio-heading: #233b2a;
   --aio-body: #3d563d;
   --aio-muted: #485942;
@@ -85,6 +86,7 @@ body.allio-body {
   min-width: 120px;
   height: 40px;
   border-radius: 18px;
+  border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -98,7 +100,7 @@ body.allio-body {
 }
 .aio-header nav a.active {
   background: var(--aio-primary);
-  border: 1px solid #73936cd9;
+  border-color: #73936cd9;
   color: #f6f1e1;
   box-shadow: 3px 5.4px 7.2px #24473024;
 }
@@ -523,12 +525,15 @@ body.allio-body {
   width: 18px;
   height: 18px;
   min-width: 18px;
+  min-height: 18px;
+  flex-shrink: 0;
   accent-color: #365538;
   margin: 0;
   cursor: pointer;
 }
 .aio-check {
   display: flex;
+  flex-direction: row;
   align-items: center;
   gap: 10px;
   font-size: 13px;
@@ -613,6 +618,14 @@ body.allio-body {
 }
 .aio-step-footer .is-primary {
   min-width: 240px;
+}
+.aio-footer-copy {
+  margin-right: auto;
+  min-width: 0;
+}
+.aio-footer-copy .aio-error {
+  margin-top: 4px;
+  font-size: 13px;
 }
 .aio-history {
   display: flex;

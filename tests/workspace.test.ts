@@ -100,7 +100,10 @@ async function demoPolicy() {
 }
 
 test("4단계 입력은 앞서 저장한 정보를 유지하며 직원 수 직접 입력을 거절한다", async () => {
-  await w.saveOnboarding(db, owner, { stage: 1, owner: { name: "합성사장" } });
+  await w.saveOnboarding(db, owner, {
+    stage: 1,
+    owner: { name: "합성사장", birthDate: null, phone: null, emailAlerts: false },
+  });
   await w.saveOnboarding(db, owner, { stage: 2, business: facts() });
   expect((await w.getProfile(db, owner)).onboarding).toMatchObject({
     stage: 2,

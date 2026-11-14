@@ -96,6 +96,64 @@ test("수신 동의 변경만 주소록 작업을 생성하고 기본값은 외�
   expect(await contactStatus(db, id)).toMatchObject({ desired: false, revision: 2 });
   expect(await contactStatus(db, other)).toBeNull();
 });
+test("알림 이메일 변경은 로그인 계정을 유지하고 이전 주소 해지 후 새 주소를 동기화한다", async () => {
+  const id = await customer();
+  const first = `${id}-first@example.com`,
+    second = `${id}-next@example.com`;
+  await w.putProfile(db, id, { ...profile(), email: first });
+  liveContacts();
+  const fetcher = vi.fn().mockImplementation(async () => new Response("{}", { status: 201 }));
+  vi.stubGlobal("fetch", fetcher);
+  await syncEmailContacts(db);
+  await w.putProfile(db, id, { ...profile(), email: second });
+  await syncEmailContacts(db);
+  expect(await contactStatus(db, id)).toMatchObject({ email: second, sync_status: "PENDING" });
+  await syncEmailContacts(db);
+  const calls = fetcher.mock.calls
+    .map((c) => JSON.parse(c[1].body).subscriber)
+    .filter((s) => s.email === first || s.email === second);
+  expect(calls.map((s) => [s.email, s.status])).toEqual([
+    [first, "subscribed"],
+    [first, "unsubscribed"],
+    [second, "subscribed"],
+  ]);
+  expect(await contactStatus(db, id)).toMatchObject({
+    email: second,
+    sync_status: "APPLIED",
+    remote_status: "subscribed",
+  });
+  expect(
+    (await db.query<{ email: string }>("SELECT email FROM users WHERE id=$1", [id]))[0].email,
+  ).toBe(`${id}@example.com`);
+  expect((await w.getProfile(db, id)).profile?.email).toBe(second);
+  await w.putProfile(db, id, profile());
+  expect((await w.getProfile(db, id)).profile?.email).toBe(second);
+  await pendingNotice(id);
+  vi.stubEnv("EMAIL_TRANSPORT", "stibee");
+  vi.stubEnv("STIBEE_AUTO_EMAIL_URL", "https://stibee.com/api/v1.0/auto/synthetic");
+  await dispatchWorkspaceNotifications(db);
+  expect(fetcher.mock.calls.some((c) => JSON.parse(c[1].body).subscriber === second)).toBe(true);
+});
+test("다시 사용하는 이메일의 오래된 해지 작업은 새 동의를 취소하지 않는다", async () => {
+  const id = await customer();
+  const first = `${id}-a@example.com`,
+    second = `${id}-b@example.com`;
+  await w.putProfile(db, id, { ...profile(), email: first });
+  await w.putProfile(db, id, { ...profile(), email: second });
+  await w.putProfile(db, id, { ...profile(), email: first });
+  liveContacts();
+  const fetcher = vi.fn().mockImplementation(async () => new Response("{}", { status: 201 }));
+  vi.stubGlobal("fetch", fetcher);
+  await syncEmailContacts(db);
+  await syncEmailContacts(db);
+  const calls = fetcher.mock.calls.map((c) => JSON.parse(c[1].body).subscriber);
+  expect(calls.some((s) => s.email === first && s.status === "unsubscribed")).toBe(false);
+  expect(await contactStatus(db, id)).toMatchObject({
+    email: first,
+    desired: true,
+    sync_status: "APPLIED",
+  });
+});
 test("스티비 주소록은 서비스 동의만 반영하고 중복 호출하지 않는다", async () => {
   const id = await customer();
   await w.putProfile(db, id, profile());

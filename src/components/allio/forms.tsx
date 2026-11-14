@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { api } from "@/components/actions";
+import { onboardingState, ownerRequiredError } from "@/domain/onboarding";
 import type {
   OwnerProfile,
   WorkspaceBusiness,
@@ -37,19 +38,23 @@ const text = (v: string) => v.trim() || null;
 const number = (v: string) => (v === "" ? null : Number(v));
 function cleanOwner(p: OwnerProfile | null | undefined): OwnerProfile {
   return p
-    ? { name: p.name, birthDate: p.birthDate, phone: p.phone, emailAlerts: p.emailAlerts }
+    ? {
+        name: p.name,
+        birthDate: p.birthDate,
+        phone: p.phone,
+        emailAlerts: p.emailAlerts,
+        email: p.email,
+      }
     : { ...blankOwner };
 }
 
 function OwnerFields({
   value,
   change,
-  email,
   today,
 }: {
   value: OwnerProfile;
   change: (v: OwnerProfile) => void;
-  email: string;
   today: string;
 }) {
   return (
@@ -58,6 +63,7 @@ function OwnerFields({
       <div className="aio-fields">
         <Field label="이름">
           <input
+            required
             autoComplete="name"
             maxLength={80}
             placeholder="이름을 입력해 주세요"
@@ -68,14 +74,16 @@ function OwnerFields({
         <Field label="생년월일">
           <input
             type="date"
+            required
             max={today}
             value={value.birthDate ?? ""}
             onInput={(e) => change({ ...value, birthDate: text(e.currentTarget.value) })}
           />
         </Field>
-        <Field label="휴대전화 (선택)">
+        <Field label="휴대전화">
           <input
             type="tel"
+            required
             autoComplete="tel"
             placeholder="010-0000-0000"
             value={value.phone ?? ""}
@@ -85,7 +93,15 @@ function OwnerFields({
           />
         </Field>
         <Field label="알림 받을 이메일">
-          <input type="email" value={email} readOnly />
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            maxLength={254}
+            value={value.email ?? ""}
+            placeholder="이메일을 입력해 주세요"
+            onChange={(e) => change({ ...value, email: text(e.currentTarget.value) })}
+          />
         </Field>
       </div>
       <label className="aio-check">
@@ -371,19 +387,25 @@ export function ProfileEditor({
   kind,
   onboarding = false,
   requestedStage,
+  startDemo = false,
 }: {
   data: WorkspaceData;
   kind?: string;
   onboarding?: boolean;
   requestedStage?: number;
+  startDemo?: boolean;
 }) {
   const router = useRouter();
+  const demoStarted = useRef(false);
   const stage = requestedStage ?? data.draft?.stage ?? 1;
-  const [owner, setOwner] = useState(
-    cleanOwner(onboarding ? (data.draft?.owner ?? data.profile) : data.profile),
-  );
+  const resumeDraft =
+    onboarding && !onboardingState(data.profile, data.business, data.draft).complete;
+  const [owner, setOwner] = useState<OwnerProfile>(() => {
+    const saved = cleanOwner(resumeDraft ? (data.draft?.owner ?? data.profile) : data.profile);
+    return { ...saved, email: saved.email ?? data.email };
+  });
   const [business, setBusiness] = useState<WorkspaceBusiness>(
-    onboarding
+    resumeDraft
       ? (data.draft?.business ?? data.business?.facts ?? { ...blankBusiness })
       : (data.business?.facts ?? { ...blankBusiness }),
   );
@@ -403,12 +425,22 @@ export function ProfileEditor({
     "직원 정보를 확인·수정한 뒤 진단을 시작합니다. 직원 수는 명단에서 계산합니다.",
   ];
   async function save(direction: number) {
+    if (direction === 1 && (current === 1 || onboarding)) {
+      const message = ownerRequiredError(owner);
+      if (message) {
+        setError(message);
+        return;
+      }
+    }
     setBusy(true);
     setError("");
     try {
       if (onboarding) {
+        if (startDemo && !demoStarted.current) {
+          await api("demo");
+          demoStarted.current = true;
+        }
         const next = Math.max(1, Math.min(4, stage + direction));
-        await api("v2/onboarding", "PUT", { stage: next, owner, business });
         if (stage === 3 && direction === 1) {
           if (data.business) {
             await api(`v2/businesses/${data.business.id}`, "PUT", {
@@ -425,10 +457,17 @@ export function ProfileEditor({
             facts: { ...fresh.facts, rosterConfirmed: true },
             revision: fresh.revision,
           });
-          router.push("/dashboard");
+          await api("v2/onboarding", "PUT", {
+            stage: 4,
+            completed: true,
+            owner,
+            business: { ...fresh.facts, rosterConfirmed: true },
+          });
+          router.replace("/dashboard");
           router.refresh();
           return;
         }
+        await api("v2/onboarding", "PUT", { stage: next, completed: false, owner, business });
         router.push(`/onboarding/${next}`);
         router.refresh();
       } else {
@@ -471,6 +510,7 @@ export function ProfileEditor({
         description={onboarding ? descriptions[current - 1] : undefined}
       />
       <form
+        noValidate={current === 1}
         onSubmit={(e) => {
           e.preventDefault();
           void save(1);
@@ -480,12 +520,7 @@ export function ProfileEditor({
           {current < 4 ? (
             <Card className="aio-form-card">
               {current === 1 ? (
-                <OwnerFields
-                  value={owner}
-                  change={setOwner}
-                  email={data.email}
-                  today={data.today}
-                />
+                <OwnerFields value={owner} change={setOwner} today={data.today} />
               ) : current === 2 ? (
                 <BusinessFields value={business} change={setBusiness} />
               ) : (
@@ -517,7 +552,6 @@ export function ProfileEditor({
               <ButtonLink href="/onboarding/2">사업장 정보 입력</ButtonLink>
             </Card>
           )}
-          <ErrorText error={error} />
           <div className="aio-step-footer">
             <div>
               {onboarding && stage > 1 ? (
@@ -527,11 +561,14 @@ export function ProfileEditor({
               ) : !onboarding ? (
                 <ButtonLink href="/mypage">취소</ButtonLink>
               ) : null}
-              <span>
-                {onboarding
-                  ? `${stage} / 4 단계 · 입력 내용은 이전·다음 이동 시 유지됩니다.`
-                  : "저장하면 현재 정보를 기준으로 다시 진단합니다."}
-              </span>
+              <div className="aio-footer-copy">
+                <span>
+                  {onboarding
+                    ? `${stage} / 4 단계 · 입력 내용은 이전·다음 이동 시 유지됩니다.`
+                    : "저장하면 현재 정보를 기준으로 다시 진단합니다."}
+                </span>
+                <ErrorText error={error} />
+              </div>
               <button
                 className="aio-button is-primary"
                 type="submit"

@@ -95,11 +95,13 @@ function Dashboard({ data }: { data: WorkspaceData }) {
         }
         description={description(data)}
       />
-      <div className="aio-actions">
-        <ButtonLink href={data.business ? "/mypage" : "/onboarding"} primary>
-          {data.business ? "정보 수정" : "내 사업장 등록"}
-        </ButtonLink>
-      </div>
+      {!data.business && (
+        <div className="aio-actions">
+          <ButtonLink href="/onboarding" primary>
+            내 사업장 등록
+          </ButtonLink>
+        </div>
+      )}
       <Reevaluate data={data} />
       <div className="aio-asymmetric aio-dashboard-grid">
         <Card>
@@ -320,7 +322,7 @@ function MyPage({ data }: { data: WorkspaceData }) {
               <br />
               연락처 {p?.phone ?? "미입력"}
               <br />
-              이메일 {data.email}
+              이메일 {p?.email ?? data.email}
             </p>
             <ButtonLink href="/mypage/owner">사장님 정보 수정</ButtonLink>
           </Card>

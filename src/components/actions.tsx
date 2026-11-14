@@ -85,7 +85,7 @@ export function ActionButton({
 }
 export function DemoStart() {
   return (
-    <ActionButton path="demo" href="/dashboard" className="button primary large">
+    <ActionButton path="demo" href="/onboarding/1" className="button primary large">
       로컬 데모 시작 <ArrowRight size={18} />
     </ActionButton>
   );
