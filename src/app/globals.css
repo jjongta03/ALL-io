@@ -206,6 +206,7 @@ label small {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
   border-bottom: 1px solid var(--line);
   padding: 0 44px;
   font-size: 12px;
@@ -425,6 +426,158 @@ footer {
 }
 .login-form label {
   font-size: 12px;
+}
+.login-page {
+  max-width: 1120px;
+  margin: 0 auto 24px;
+}
+.login-layout {
+  display: grid;
+  grid-template-columns: 1fr minmax(320px, 440px);
+  align-items: center;
+  gap: 56px;
+  padding: 20px 0;
+}
+.login-intro h1 {
+  font-size: clamp(28px, 3vw, 40px);
+  margin: 14px 0 20px;
+}
+.login-intro > p {
+  font-size: 15px;
+  line-height: 1.9;
+}
+.login-benefits {
+  display: grid;
+  gap: 14px;
+  max-width: 370px;
+  margin-top: 40px;
+}
+.login-benefits > div {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding: 17px 0;
+  color: var(--green);
+}
+.login-benefits span {
+  flex: 1;
+}
+.login-benefits strong,
+.login-benefits small {
+  display: block;
+}
+.login-benefits small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+.login-card {
+  padding: 36px;
+  min-width: 0;
+  box-shadow: 0 18px 50px #365c4310;
+}
+.login-card h2 {
+  font-size: 25px;
+  margin: 10px 0 8px;
+}
+.login-card > p {
+  font-size: 13px;
+}
+.login-card .login-form {
+  margin-top: 28px;
+  gap: 10px;
+}
+.login-card .login-form > label:not(:first-child) {
+  margin-top: 10px;
+}
+.login-card .login-form label {
+  font-size: 13px;
+}
+.password-field {
+  position: relative;
+}
+.password-field input {
+  padding-right: 52px;
+}
+.password-visibility {
+  position: absolute;
+  right: 2px;
+  top: 2px;
+  width: 42px;
+  height: calc(100% - 4px);
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+}
+.password-visibility:hover {
+  background: var(--green-light);
+  color: var(--green);
+}
+.login-submit {
+  width: 100%;
+  margin-top: 14px;
+  min-height: 48px;
+}
+.login-help {
+  font-size: 12px;
+  line-height: 1.8;
+  text-align: center;
+  margin-top: 9px;
+  overflow-wrap: anywhere;
+}
+.login-panel .button {
+  margin-top: 20px;
+}
+.account-email {
+  margin-left: auto;
+  max-width: 260px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  font-size: 12px;
+}
+.topbar-login {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--green);
+}
+@media (max-width: 1000px) {
+  .login-layout {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    max-width: 540px;
+    margin: auto;
+    padding: 22px 0;
+  }
+  .login-intro h1 {
+    font-size: 30px;
+  }
+  .login-benefits {
+    display: none;
+  }
+  .login-card {
+    padding: 28px;
+  }
+}
+@media (max-width: 600px) {
+  .login-page {
+    margin-top: 0;
+  }
+  .login-card {
+    padding: 24px 20px;
+  }
+  .login-intro h1 {
+    font-size: 26px;
+  }
+  .account-email {
+    max-width: 150px;
+  }
+  .topbar-note {
+    display: none;
+  }
 }
 .small-note {
   font-size: 11px;

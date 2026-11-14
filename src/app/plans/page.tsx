@@ -4,7 +4,7 @@ import { pageUser } from "@/server/page-auth";
 import { getDb } from "@/server/db";
 import { listPlans } from "@/server/service";
 export default async function Dashboard() {
-  const user = await pageUser();
+  const user = await pageUser(false, "/plans");
   const plans = await listPlans(await getDb(), user.id);
   return (
     <>

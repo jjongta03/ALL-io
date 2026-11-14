@@ -3,7 +3,7 @@ import Link from "next/link";
 import { pageUser } from "@/server/page-auth";
 import { getDb } from "@/server/db";
 export default async function Outbox() {
-  const user = await pageUser();
+  const user = await pageUser(false, "/outbox");
   const mail = await (
     await getDb()
   ).query<{ id: string; subject: string; body: string; created_at: Date; plan_id: string }>(

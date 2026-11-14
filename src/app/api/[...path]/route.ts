@@ -1,18 +1,8 @@
-import { cookies } from "next/headers";
 import { z } from "zod";
 import { type NextRequest } from "next/server";
 import { route, readJson, rateLimit } from "@/server/http";
 import { getDb } from "@/server/db";
-import {
-  requireUser,
-  startDemoSession,
-  verifyPassword,
-  hashPassword,
-  setSession,
-  SESSION_COOKIE,
-  digestToken,
-  type User,
-} from "@/server/auth";
+import { requireUser, startDemoSession, setSession, clearSession } from "@/server/auth";
 import { businessSchema, hireSchema, definitionSchema, dateSchema } from "@/domain/contracts";
 import {
   createPlan,
@@ -43,6 +33,7 @@ import {
 } from "@/integrations/providers";
 import { getConfig } from "@/server/config";
 import { LinerRuleDraftGenerator } from "@/integrations/drafting";
+import { authenticateAccount, loginSchema } from "@/server/accounts";
 import { workspaceApi } from "@/server/workspace-api";
 
 export const runtime = "nodejs";
@@ -61,36 +52,19 @@ const handler = route(async (req: NextRequest) => {
     return { ok: true };
   }
   if (key === "POST session") {
-    const body = await readJson(
-      req,
-      z.object({ email: z.email().max(254), password: z.string().min(1).max(256) }).strict(),
-    );
-    rateLimit(`login:${body.email.toLowerCase()}`);
-    const user = (
-      await (
-        await getDb()
-      ).query<User & { password_hash: string | null }>(
-        "SELECT * FROM users WHERE email=$1 AND is_demo=false",
-        [body.email.toLowerCase()],
-      )
-    )[0];
-    // Keep password derivation work comparable for an unknown account.
-    const fallback = hashPassword("invalid-placeholder-password");
-    if (!verifyPassword(body.password, user?.password_hash || fallback) || !user)
-      throw new AppError(401, "이메일 또는 비밀번호를 확인하세요.");
+    rateLimit("login:global", 120);
+    const body = await readJson(req, loginSchema);
+    const user = await authenticateAccount(await getDb(), body);
     await setSession(user.id);
+    return { ok: true };
+  }
+  if (key === "DELETE session") {
+    await clearSession();
     return { ok: true };
   }
   const user = await requireUser(path[0] === "admin");
   const db = await getDb();
   if (path[0] === "v2") return workspaceApi(req, db, user, path.slice(1));
-  if (key === "DELETE session") {
-    const jar = await cookies();
-    const token = jar.get(SESSION_COOKIE)?.value;
-    if (token) await db.query("DELETE FROM sessions WHERE token_hash=$1", [digestToken(token)]);
-    jar.delete(SESSION_COOKIE);
-    return { ok: true };
-  }
   if (key === "GET me") return { user };
   if (key === "POST support") {
     rateLimit(`support:${user.id}`, 50);

@@ -1021,3 +1021,46 @@ body.allio-body {
     transition: none !important;
   }
 }
+
+/* Issued-account login follows the existing ALL-IO surfaces and typography. */
+.aio-signin {
+  margin-left: auto;
+  color: #254b34;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.aio.login-page {
+  gap: 0;
+}
+.aio .login-card {
+  gap: 0;
+  padding: 36px;
+  box-shadow: var(--aio-shadow);
+}
+.aio .login-intro h1 {
+  margin: 14px 0 20px;
+}
+.aio .login-intro > p {
+  line-height: 1.9;
+}
+.aio .login-card h2 {
+  margin: 10px 0 8px;
+  font-size: 25px;
+}
+.aio .login-card > p {
+  font-size: 13px;
+}
+.aio .login-benefits > div {
+  border-color: #8da38b;
+}
+.aio .login-help {
+  font-size: 12px;
+  line-height: 1.8;
+  margin-top: 9px;
+}
+@media (max-width: 600px) {
+  .aio .login-card {
+    padding: 24px 20px;
+  }
+}

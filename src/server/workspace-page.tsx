@@ -16,7 +16,7 @@ import type {
   Document,
 } from "@/components/allio/types";
 export async function WorkspacePage({ screen }: { screen: string[] }) {
-  const user = await pageUser();
+  const user = await pageUser(false, "/" + screen.join("/"));
   const db = await getDb();
   const profile = await service.getProfile(db, user.id);
   const rows = await db.query<Business>(

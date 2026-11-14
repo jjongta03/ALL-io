@@ -60,12 +60,17 @@ export function AllioShell({
             ALL-IO
           </Link>
           <span className="aio-tagline">내 사업장 혜택·행정 관리</span>
+          {!signedIn && (
+            <Link className="aio-signin" href="/login">
+              로그인
+            </Link>
+          )}
           {!entering && (
             <nav aria-label="주요 메뉴">
               {links.map(([href, label]) => (
                 <Link
                   key={href}
-                  href={signedIn ? href : "/"}
+                  href={signedIn ? href : `/login?next=${encodeURIComponent(href)}`}
                   className={path === href || path.startsWith(href + "/") ? "active" : ""}
                   aria-current={path === href ? "page" : undefined}
                 >

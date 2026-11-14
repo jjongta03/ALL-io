@@ -2,7 +2,7 @@ import { pageUser } from "@/server/page-auth";
 import { getDb } from "@/server/db";
 import { integrationStatus } from "@/server/integration-status";
 export default async function IntegrationsPage() {
-  await pageUser(true);
+  await pageUser(true, "/admin/integrations");
   const status = await integrationStatus(await getDb());
   return (
     <>

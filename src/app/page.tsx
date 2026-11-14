@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/server/auth";
 import { getConfig } from "@/server/config";
-import { LoginForm } from "@/components/actions";
+import { LoginForm } from "@/components/login-form";
 import { ProfileEditor } from "@/components/allio/forms";
 import { seoulDate } from "@/domain/dates";
 export default async function Home() {
@@ -57,7 +57,7 @@ export default async function Home() {
       <section className="aio-card">
         <h2>ALL-IO 시작하기</h2>
         <p>발급받은 계정으로 로그인하세요.</p>
-        <LoginForm />
+        <LoginForm next="/dashboard" />
       </section>
     </div>
   );

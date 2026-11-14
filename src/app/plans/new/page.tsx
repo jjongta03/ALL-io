@@ -2,7 +2,7 @@ import { pageUser } from "@/server/page-auth";
 import { getConfig } from "@/server/config";
 import { PlanForm } from "@/components/plan-form";
 export default async function NewPlan() {
-  const user = await pageUser();
+  const user = await pageUser(false, "/plans/new");
   return (
     <>
       <div className="page-heading">

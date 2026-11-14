@@ -29,8 +29,9 @@ describe("저장·검수·알림 통합", () => {
     expect((await listReviews(db)).filter((r) => r.status === "PENDING")).toHaveLength(1);
   });
   test("적용한 마이그레이션은 재실행 시 중복 적용하지 않는다", async () => {
+    const applied = await db.query("SELECT name FROM schema_migrations ORDER BY name");
     await migrate(db);
-    expect(await db.query("SELECT name FROM schema_migrations")).toHaveLength(6);
+    expect(await db.query("SELECT name FROM schema_migrations ORDER BY name")).toEqual(applied);
   });
   test("다른 사용자 자원은 조회·수정할 수 없다", async () => {
     const id = await createPlan(db, owner, business, hire);

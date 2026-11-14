@@ -128,7 +128,10 @@ export function MutationButton({
           try {
             await api(path, method, body);
             onDone?.();
-            if (href) router.push(href);
+            if (href) {
+              if (path === "session" && method === "DELETE") router.replace(href);
+              else router.push(href);
+            }
             router.refresh();
           } catch (e) {
             setError((e as Error).message);

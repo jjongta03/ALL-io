@@ -12,9 +12,9 @@ import { ResultCard } from "@/components/result-card";
 import { ActionButton, FeedbackForm } from "@/components/actions";
 import { PlanForm } from "@/components/plan-form";
 export default async function PlanPage({ params }: { params: Promise<{ id: string }> }) {
-  const user = await pageUser();
   const { id } = await params;
   if (!z.string().uuid().safeParse(id).success) notFound();
+  const user = await pageUser(false, `/plans/${id}`);
   let detail;
   try {
     detail = await planDetail(await getDb(), id, user.id);

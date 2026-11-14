@@ -1,6 +1,6 @@
 import { randomBytes, scryptSync, timingSafeEqual, createHash, randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
-import { getDb, type Database } from "./db";
+import { getDb, type Sql } from "./db";
 import { getConfig } from "./config";
 import { AppError } from "./errors";
 
@@ -17,7 +17,7 @@ export function verifyPassword(password: string, stored: string) {
   const actual = scryptSync(password, salt, 64);
   return timingSafeEqual(actual, Buffer.from(raw, "hex"));
 }
-export async function createSession(db: Database, userId: string) {
+export async function createSession(db: Sql, userId: string) {
   const token = randomBytes(32).toString("base64url");
   const expires = new Date(Date.now() + 7 * 86400000);
   await db.query("INSERT INTO sessions(token_hash,user_id,expires_at) VALUES($1,$2,$3)", [
@@ -28,8 +28,13 @@ export async function createSession(db: Database, userId: string) {
   return { token, expires };
 }
 export async function setSession(userId: string) {
-  const session = await createSession(await getDb(), userId);
-  (await cookies()).set(SESSION_COOKIE, session.token, {
+  const jar = await cookies();
+  const db = await getDb();
+  const session = await db.transaction(async (tx) => {
+    await revokeSession(tx, jar.get(SESSION_COOKIE)?.value);
+    return createSession(tx, userId);
+  });
+  jar.set(SESSION_COOKIE, session.token, {
     httpOnly: true,
     sameSite: "lax",
     secure: getConfig().production,
@@ -39,20 +44,46 @@ export async function setSession(userId: string) {
 }
 export async function getUser(): Promise<User | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
-  if (!token) return null;
-  const rows = await (
-    await getDb()
-  ).query<User>(
+  if (!validSessionToken(token)) return null;
+  return sessionUser(await getDb(), token, getConfig().demo);
+}
+function validSessionToken(token: string | undefined): token is string {
+  return !!token && /^[a-zA-Z0-9_-]{43}$/.test(token);
+}
+export async function sessionUser(
+  db: Sql,
+  token: string,
+  demoAllowed: boolean,
+): Promise<User | null> {
+  if (!validSessionToken(token)) return null;
+  const rows = await db.query<User>(
     "SELECT u.id,u.email,u.role,u.is_demo FROM sessions s JOIN users u ON u.id=s.user_id WHERE s.token_hash=$1 AND s.expires_at>now()",
     [digestToken(token)],
   );
   const user = rows[0] ?? null;
-  if (user?.is_demo && !getConfig().demo) return null;
+  if (user?.is_demo && !demoAllowed) return null;
   return user;
+}
+export async function revokeSession(db: Sql, token: string | undefined) {
+  if (validSessionToken(token))
+    await db.query("DELETE FROM sessions WHERE token_hash=$1", [digestToken(token)]);
+}
+export async function clearSession() {
+  const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
+  if (validSessionToken(token)) await revokeSession(await getDb(), token);
+  jar.set(SESSION_COOKIE, "", {
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: getConfig().production,
+    maxAge: 0,
+  });
 }
 export async function requireUser(admin = false) {
   const user = await getUser();
-  if (!user) throw new AppError(401, "먼저 로그인하거나 데모를 시작하세요.", "UNAUTHENTICATED");
+  if (!user)
+    throw new AppError(401, "로그인이 필요합니다. 다시 로그인해 주세요.", "UNAUTHENTICATED");
   if (admin && user.role !== "ADMIN")
     throw new AppError(403, "운영자 권한이 필요합니다.", "FORBIDDEN");
   return user;
