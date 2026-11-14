@@ -1,6 +1,6 @@
 # 개발 시작
 
-PC 웹 와이어프레임용 `/api/v2` 백엔드의 계약·스티비 이메일·정기 작업·검증 결과는 [BACKEND-V2.md](BACKEND-V2.md)에 정리했다. 기존 채용 계획 흐름과 별개이며 프론트엔드 연결 전 상태다.
+PC 웹 `/api/v2` 백엔드의 계약·스티비 이메일·정기 작업은 [BACKEND-V2.md](BACKEND-V2.md)에, Figma 화면 구현·연결·검증 결과는 [FRONTEND.md](FRONTEND.md)에 정리했다. 기존 채용 계획은 `/plans`에 보존했다.
 
 ## 환경과 선택 이유
 

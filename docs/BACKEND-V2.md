@@ -1,6 +1,6 @@
 # PC 웹 와이어프레임용 백엔드 v2
 
-구현 기준은 [Figma의 통합 섹션 105:2084](https://www.figma.com/design/S3Ur5di6qvUm7WugoJRbYX/?node-id=105-2084)과 대화에서 확정한 요구사항이다. 2026-11-15 요청에 따라 **백엔드를 추가했고 Bivia는 제외했다. 이후 같은 날 요청에 따라 알림톡을 스티비 이메일로 통일하고 채널톡 API·SDK·설정·상담 버튼을 제거했다.** 기존 채용 계획 앱은 유지하며 새 흐름은 `/api/v2`로 분리했다. 화면 연결은 후속 작업이다.
+구현 기준은 [Figma의 통합 섹션 105:2084](https://www.figma.com/design/S3Ur5di6qvUm7WugoJRbYX/?node-id=105-2084)과 대화에서 확정한 요구사항이다. 2026-11-15 요청에 따라 **백엔드를 추가했고 Bivia는 제외했다. 이후 같은 날 요청에 따라 알림톡을 스티비 이메일로 통일하고 채널톡 API·SDK·설정·상담 버튼을 제거했다.** 기존 채용 계획 앱은 유지하며 새 흐름은 `/api/v2`로 분리했다. 2026-11-15 Figma 기반 화면을 연결했다. 경로와 검증은 [FRONTEND.md](FRONTEND.md)를 참고한다.
 
 ## 화면과 데이터 흐름
 
@@ -36,7 +36,7 @@
 | POST `/businesses/:id/evaluate`                  | 현재 정보로 재진단. 입력·규칙 스냅샷을 새로 보존                                                                                                    |
 | GET `/businesses/:id/dashboard`                  | 진행 프로젝트, 완료 수, 정기 서류                                                                                                                   |
 | GET / POST `/businesses/:id/projects`            | 프로젝트 목록 / `{policyId}`로 시작                                                                                                                 |
-| GET `/projects/:id`                              | 순서대로 정렬된 steps와 guide(신청 URL 포함), progress, complete                                                                                    |
+| GET / DELETE `/projects/:id`                     | 조회: 정렬된 steps·guide·progress·complete. 삭제: `{confirm:true}`, 소유권 확인 후 단계·예약 알림도 함께 삭제                                       |
 | PATCH `/project-steps/:id`                       | `{done?:boolean,deadline?:YYYY-MM-DD 또는 null}`                                                                                                    |
 | GET / POST `/businesses/:id/documents`           | 반복 서류·회차 조회 / 반복 서류 생성                                                                                                                |
 | PUT / DELETE `/documents/:id`                    | 반복 서류 전체 수정 / 회차와 예약까지 삭제                                                                                                          |
