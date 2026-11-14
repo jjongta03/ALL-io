@@ -21,8 +21,13 @@ async function isSendable(sql: Sql, job: MailJob) {
     `SELECT j.id FROM notification_jobs j JOIN change_plans p ON p.id=j.plan_id
     LEFT JOIN plan_tasks t ON t.id=j.task_id
     WHERE j.id=$1 AND j.status='CLAIMED' AND p.status='ACTIVE' AND p.email_alerts=true
+    AND NOT EXISTS(SELECT 1 FROM email_contacts c WHERE c.owner_id=p.owner_id AND c.desired=false)
+    AND ($2=false OR EXISTS(SELECT 1 FROM email_contacts c WHERE c.owner_id=p.owner_id AND c.desired=true AND c.sync_status='APPLIED' AND c.remote_status='subscribed'))
     AND (j.task_id IS NULL OR (j.type IN ('D-7','D-3') AND t.status IN ('TODO','NEEDS_REVIEW') AND t.deadline_version=j.deadline_version))`,
-    [job.id],
+    [
+      job.id,
+      getConfig().emailTransport === "stibee" && process.env.STIBEE_CONTACT_SYNC_ENABLED === "true",
+    ],
   );
   return rows.length > 0;
 }
@@ -40,8 +45,13 @@ export async function dispatchNotifications(db: Database, now = new Date()) {
     );
     const rows = await tx.query<MailJob>(
       `SELECT j.*,u.email,u.is_demo FROM notification_jobs j JOIN change_plans p ON p.id=j.plan_id JOIN users u ON u.id=p.owner_id
-      WHERE j.status='PENDING' AND j.scheduled_at<=$1 ORDER BY j.scheduled_at LIMIT 50 FOR UPDATE OF j SKIP LOCKED`,
-      [now],
+      WHERE j.status='PENDING' AND j.scheduled_at<=$1
+      AND ($2=false OR EXISTS(SELECT 1 FROM email_contacts c WHERE c.owner_id=p.owner_id AND c.desired=true AND c.sync_status='APPLIED' AND c.remote_status='subscribed'))
+      ORDER BY j.scheduled_at LIMIT 50 FOR UPDATE OF j SKIP LOCKED`,
+      [
+        now,
+        config.emailTransport === "stibee" && process.env.STIBEE_CONTACT_SYNC_ENABLED === "true",
+      ],
     );
     for (const job of rows)
       await tx.query(

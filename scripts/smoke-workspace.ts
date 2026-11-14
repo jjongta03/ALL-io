@@ -240,6 +240,54 @@ async function main() {
     .notifications;
   assert.ok(inbox.every((n: { channel: string }) => n.channel === "EMAIL"));
   assert.ok(inbox.some((n: { status: string }) => n.status === "LOCAL_ONLY"));
+  assert.equal((await request("v2/email-contact", { cookie })).body.contact.desired, true);
+  assert.equal((await request("v2/email-contact", { cookie: other })).body.contact, null);
+  await request("v2/admin/jobs", {
+    method: "POST",
+    cookie,
+    origin: null,
+    body: { kind: "contacts" },
+    status: 403,
+  });
+  await request("v2/admin/jobs", { method: "POST", cookie, body: { kind: "contacts" } });
+  assert.equal(
+    (await request("v2/email-contact", { cookie })).body.contact.sync_status,
+    "LOCAL_ONLY",
+  );
+  await request("v2/admin/jobs", { method: "POST", cookie, body: { kind: "weekly" } });
+  await request("v2/admin/jobs", {
+    method: "POST",
+    cookie,
+    body: { kind: "contact-reconcile" },
+    status: 503,
+  });
+  await request("v2/admin/jobs", {
+    method: "POST",
+    cookie,
+    body: { kind: "policy-watch" },
+    status: 503,
+  });
+  const watch = (
+    await request("v2/admin/watches", {
+      method: "POST",
+      cookie,
+      body: { query: "HTTP 합성 테스트 공고 검색", enabled: false },
+    })
+  ).body;
+  await request(`v2/admin/watches/${watch.id}`, {
+    method: "PATCH",
+    cookie,
+    body: { enabled: false },
+  });
+  await request("v2/admin/discoveries", { cookie });
+  await request("v2/admin/watch-events", { cookie });
+  await request("v2/integrations/alt", { cookie, status: 404 });
+  await request("v2/admin/jobs", {
+    method: "POST",
+    cookie,
+    body: { kind: "alt-sync" },
+    status: 422,
+  });
   await request("v2/profile", {
     method: "PUT",
     cookie,
@@ -301,7 +349,7 @@ async function main() {
     status: 404,
   });
   console.log(
-    "v2 HTTP 스모크 통과: 화면 24개·잘못된 경로 404·단계별 입력·소유권·직원 스캔 확인/수정/삭제·현재 혜택·상세·프로젝트 완료/해제/삭제·반복 일정·이메일 동의/로컬 보관·제거한 채널톡 API 차단",
+    "v2 HTTP 스모크 통과: 화면 24개·잘못된 경로 404·단계별 입력·소유권·직원 스캔 확인/수정/삭제·현재 혜택·상세·프로젝트 완료/해제/삭제·반복 일정·이메일 동의/로컬 보관·주소록 동기화·주간 요약·공고 감시 API·제외한 외부 API 차단",
   );
 }
 main().catch((e) => {

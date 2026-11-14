@@ -30,7 +30,7 @@ describe("저장·검수·알림 통합", () => {
   });
   test("적용한 마이그레이션은 재실행 시 중복 적용하지 않는다", async () => {
     await migrate(db);
-    expect(await db.query("SELECT name FROM schema_migrations")).toHaveLength(4);
+    expect(await db.query("SELECT name FROM schema_migrations")).toHaveLength(5);
   });
   test("다른 사용자 자원은 조회·수정할 수 없다", async () => {
     const id = await createPlan(db, owner, business, hire);

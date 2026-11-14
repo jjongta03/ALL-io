@@ -43,6 +43,39 @@ export async function trackIntegration<T>(
 export const integrationCatalog = [
   {
     provider: "Liner",
+    operation: "watch",
+    title: "공고 탐색·변경 감시",
+    where: "운영자 v2 공고 감시 API",
+    endpoint: "POST /api/v2/admin/jobs (policy-watch)",
+    file: "src/server/policy-watches.ts",
+    required: ["LINER_API_KEY"],
+    flag: "POLICY_WATCH_ENABLED",
+    note: "검색 후보를 운영자가 출처로 등록합니다. 원문 변경과 재변경을 기록하고 승인 대기 초안으로 연결합니다.",
+  },
+  {
+    provider: "Stibee",
+    operation: "contacts",
+    title: "수신 동의·주소록 동기화",
+    where: "마이페이지 수신 동의 → 정기 작업",
+    endpoint: "POST /api/v2/admin/jobs (contacts)",
+    file: "src/server/email-contacts.ts",
+    required: ["STIBEE_API_KEY", "STIBEE_LIST_ID"],
+    flag: "STIBEE_CONTACT_SYNC_ENABLED",
+    note: "서비스 알림 동의를 주소록에 반영합니다. 광고 수신 동의는 부여하지 않습니다.",
+  },
+  {
+    provider: "Stibee",
+    operation: "contact-reconcile",
+    title: "외부 수신 거부 반영",
+    where: "스티비 주소록 → 정기 작업",
+    endpoint: "POST /api/v2/admin/jobs (contact-reconcile)",
+    file: "src/server/email-contacts.ts",
+    required: ["STIBEE_API_KEY", "STIBEE_LIST_ID"],
+    flag: "STIBEE_CONTACT_SYNC_ENABLED",
+    note: "외부 수신 거부·대기·보관 상태를 확인하고 로컬 이메일 동의와 미발송 알림을 해제합니다.",
+  },
+  {
+    provider: "Liner",
     operation: "search",
     title: "공식 근거 검색",
     where: "운영자 → 수집·작업·신고 → 공식 자료 검색",
@@ -83,7 +116,7 @@ export const integrationCatalog = [
     file: "src/integrations/providers.ts · sendStibee / src/server/workspace-notifications.ts / src/server/jobs.ts",
     required: ["STIBEE_API_KEY", "STIBEE_AUTO_EMAIL_URL"],
     flag: null,
-    note: "신규 혜택·프로젝트 D-7/D-3·임박 일정·반복 서류를 이메일로 안내합니다. EMAIL_TRANSPORT=stibee가 필요합니다. 로컬은 보관함에 저장합니다. 수신자는 스티비 주소록에 미리 등록되어야 합니다.",
+    note: "신규 혜택·프로젝트 D-7/D-3·임박 일정·반복 서류를 이메일로 안내합니다. EMAIL_TRANSPORT=stibee가 필요합니다. 로컬은 보관함에 저장합니다. 주소록 동기화 완료 후 신규 혜택·마감 및 주간 미완료 업무를 발송합니다. 동기화 비활성 시 수신자는 주소록에 미리 등록되어야 합니다.",
   },
   {
     provider: "NTS",
@@ -116,7 +149,7 @@ export async function integrationStatus(sql: Sql) {
       enabled:
         live &&
         (!item.flag || process.env[item.flag] === "true") &&
-        (item.provider !== "Stibee" || getConfig().emailTransport === "stibee"),
+        (item.operation !== "send" || getConfig().emailTransport === "stibee"),
       events: events.filter((e) => e.provider === item.provider && e.operation === item.operation),
     })),
   };

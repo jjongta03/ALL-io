@@ -53,8 +53,8 @@ export default async function IntegrationsPage() {
           <span className="badge muted">후속 범위</span>
           <h2>아직 연결하지 않은 API</h2>
           <p>
-            Alt 인터뷰·전사 수집, Liner Search Agent·Deep Research, EXAONE 설명, VAPI 전화는
-            미구현입니다. 실제 호출이나 데이터 수집은 하지 않습니다.
+            EXAONE과 Alt는 연결 범위에서 제외했습니다. Liner Search Agent·Deep Research와 VAPI
+            전화는 미구현입니다.
           </p>
         </article>
       </div>

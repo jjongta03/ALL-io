@@ -55,6 +55,16 @@ export const officialHosts = [
   "www.data.go.kr",
   "4insure.or.kr",
   "www.4insure.or.kr",
+  "bizinfo.go.kr",
+  "www.bizinfo.go.kr",
+  "sbiz24.kr",
+  "www.sbiz24.kr",
+  "smes.go.kr",
+  "www.smes.go.kr",
+  "semas.or.kr",
+  "www.semas.or.kr",
+  "gov.kr",
+  "www.gov.kr",
 ];
 export function isAllowedSource(value: string) {
   try {
