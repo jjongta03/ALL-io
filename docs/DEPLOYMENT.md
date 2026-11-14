@@ -28,6 +28,14 @@
 
 실제 공개 서버에서는 배포 성공 상태, HTTPS `/api/health`, `/login`, 비로그인 자원 접근 401, 데모 세션 차단, 잘못된 Origin 차단과 DB 마이그레이션·최초 계정 생성 상태를 확인한다. 제공자 상태가 성공하거나 실제 HTTPS 응답을 확인하기 전에는 배포 완료로 보고하지 않는다.
 
-상태: 배포용 코드 검증 및 Blueprint 계획 준비 중. 실제 웹 서버 적용·공개 주소 확인 후 기록을 갱신한다.
+상태: **배포 완료**. 공개 주소는 [https://allio-web-trial.onrender.com](https://allio-web-trial.onrender.com), 로그인은 [/login](https://allio-web-trial.onrender.com/login)이다.
+
+- Render 배포 `dep-dbscgcmi0phs73co7g4g`가 2026-11-15 05:46(한국시간)에 `live`로 완료됐다.
+- 실행 소스 커밋: `11b6267fee864f82028880de7ad6b4d658ededbd`. 이후 이 문서와 README의 링크만 갱신했다.
+- [Render 관리 화면](https://dashboard.render.com/web/srv-dbscgcei0phs73co7fi0), [Blueprint 계획·진행 기록](https://dashboard.render.com/blueprint/exs-dbscg0bm8hqs73cc9ja0/sync/exe-dbscg0jm8hqs73cc9jk0).
+- 로컬 테스트 **111개**, 형식 검사, 배포용 빌드, 로그인·기존·v2 HTTP 스모크(화면 24개 포함)를 통과했다.
+- 공개 HTTPS에서 live 모드 DB 건강 상태 200, 로그인 페이지 200, 비로그인 계정·사업장 자원 401, 데모 계정 생성 404, 잘못된 Origin 403, 잘못된 로그인 입력 422를 확인했다. 요청으로 실제 사용자 데이터나 외부 이메일을 생성하지 않았다.
+- 실제 PostgreSQL에 마이그레이션과 최초 운영자 계정이 생성됐으며, 서비스 시작 로그에서 가상 규칙을 시드하지 않았음을 확인했다. 실제 자격 판정용 정책은 별도 검수·승인 후 등록해야 한다.
+- 초기 비밀번호와 암호화 키는 Render 환경 변수에만 보관한다. 해당 계정의 실제 비밀번호를 읽거나 채팅·GitHub에 게시하지 않았다.
 
 공식 근거: [무료 플랜](https://render.com/docs/free), [Blueprint 규격](https://render.com/docs/blueprint-spec), [자동 제공 환경 변수](https://render.com/docs/environment-variables), [배포 단계](https://render.com/docs/deploys).
